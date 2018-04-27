@@ -48,10 +48,6 @@ private:
 
 	void calcFadeoutStep();
 
-	/* calcVolumeEnv
-	Computes any changes in volume done via envelope tool. */
-
-	void calcVolumeEnv(int frame);
 
 	/* fade methods
 	Prepare channel for fade, mixer will take care of the process during master 
@@ -67,10 +63,9 @@ private:
 	SRC_STATE* rsmp_state;
 	SRC_DATA   rsmp_data;
 
-	/* pChan, vChanPreview
-	Extra virtual channel for processing resampled data and for audio preview. */
+	/* vChanPreview
+	Extra virtual channel for audio preview. */
 
-	giada::m::AudioBuffer pChan;
 	giada::m::AudioBuffer vChanPreview;
 
 	/* begin, end
@@ -82,14 +77,8 @@ private:
 	float pitch;
 	float boost;
 
-	bool  fadeinOn;
-	float fadeinVol;
-	bool  fadeoutOn;
-	float fadeoutVol;      // fadeout volume
+
 	int   fadeoutTracker;  // tracker fadeout, xfade only
-	float fadeoutStep;     // fadeout decrease
-  int   fadeoutType;     // xfade or fadeout
-  int		fadeoutEnd;      // what to do when fadeout ends
 
 public:
 
@@ -168,10 +157,20 @@ public:
 
 	void setReadActions(bool v, bool killOnFalse);
 
+	/* calcVolumeEnv
+	Computes any changes in volume done via envelope tool. */
+
+	void calcVolumeEnv(int frame);
+
 	/* onPreviewEnd
 	A callback fired when audio preview ends. */
 
 	std::function<void()> onPreviewEnd;
+
+	/* pChan
+	Extra virtual channel for processing resampled data. */
+
+	giada::m::AudioBuffer pChan;
 
 	Wave* wave;
 	int   tracker;         // chan position
@@ -181,6 +180,14 @@ public:
 	bool  qWait;           // quantizer wait
   bool  inputMonitor;
 
+	bool  fadeinOn;
+	float fadeinVol;
+	bool  fadeoutOn;
+	float fadeoutVol;      // fadeout volume
+  int   fadeoutType;     // xfade or fadeout
+	float fadeoutStep;     // fadeout decrease
+  int		fadeoutEnd;      // what to do when fadeout ends
+  
 	/* frameRewind
 	Exact frame in which a rewind occurs. */
 

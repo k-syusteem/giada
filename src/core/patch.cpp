@@ -227,7 +227,6 @@ bool readChannels(json_t* jContainer)
 		if (!storager::setString(jChannel, PATCH_KEY_CHANNEL_NAME,                 channel.name)) return 0;
 		if (!storager::setInt   (jChannel, PATCH_KEY_CHANNEL_COLUMN,               channel.column)) return 0;
 		if (!storager::setInt   (jChannel, PATCH_KEY_CHANNEL_MUTE,                 channel.mute)) return 0;
-		if (!storager::setInt   (jChannel, PATCH_KEY_CHANNEL_MUTE_S,               channel.mute_s)) return 0;
 		if (!storager::setInt   (jChannel, PATCH_KEY_CHANNEL_SOLO,                 channel.solo)) return 0;
 		if (!storager::setFloat (jChannel, PATCH_KEY_CHANNEL_VOLUME,               channel.volume)) return 0;
 		if (!storager::setFloat (jChannel, PATCH_KEY_CHANNEL_PAN,                  channel.pan)) return 0;
@@ -406,7 +405,6 @@ void writeChannels(json_t* jContainer, vector<channel_t>* channels)
 		json_object_set_new(jChannel, PATCH_KEY_CHANNEL_NAME,                 json_string(channel.name.c_str()));
 		json_object_set_new(jChannel, PATCH_KEY_CHANNEL_COLUMN,               json_integer(channel.column));
 		json_object_set_new(jChannel, PATCH_KEY_CHANNEL_MUTE,                 json_integer(channel.mute));
-		json_object_set_new(jChannel, PATCH_KEY_CHANNEL_MUTE_S,               json_integer(channel.mute_s));
 		json_object_set_new(jChannel, PATCH_KEY_CHANNEL_SOLO,                 json_integer(channel.solo));
 		json_object_set_new(jChannel, PATCH_KEY_CHANNEL_VOLUME,               json_real(channel.volume));
 		json_object_set_new(jChannel, PATCH_KEY_CHANNEL_PAN,                  json_real(channel.pan));

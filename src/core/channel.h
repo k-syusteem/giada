@@ -79,14 +79,6 @@ protected:
 
 	int bufferSize;
 
-	/* volume_*
-	Internal volume variables: volume_i for envelopes, volume_d keeps track of
-	the delta during volume changes. */
-	
-	float volume_i;
-	float volume_d;
-
-	bool mute_i;                // internal mute
 	
 public:
 
@@ -267,9 +259,17 @@ public:
 	int         status;   // status: see const.h
 	int         key;      // keyboard button
 	bool        mute;     // global mute
-	bool        mute_s;   // previous mute status after being solo'd TODO - remove it with mute refactoring
 	bool        solo;
 
+	/* volume_*
+	Internal volume variables: volume_i for envelopes, volume_d keeps track of
+	the delta during volume changes. */
+	
+	float volume_i;
+	float volume_d;
+
+	bool mute_i;                // internal mute
+	
   bool hasActions;      // has something recorded
   bool readActions;     // read what's recorded
 	int  recStatus;       // status of recordings (waiting, ending, ...)

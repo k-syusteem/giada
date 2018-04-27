@@ -52,9 +52,6 @@ using namespace giada::m;
 
 Channel::Channel(int type, int status, int bufferSize)
 : bufferSize     (bufferSize),
-	volume_i       (1.0f),
-	volume_d       (0.0f),
-	mute_i         (false),
 	guiChannel     (nullptr),
 	previewMode    (G_PREVIEW_NONE),
 	pan            (0.5f),
@@ -64,8 +61,10 @@ Channel::Channel(int type, int status, int bufferSize)
 	status         (status),
 	key            (0),
 	mute           (false),
-	mute_s         (false),
 	solo           (false),
+	volume_i       (1.0f),
+	volume_d       (0.0f),
+	mute_i         (false),
 	hasActions     (false),
 	readActions    (false),
 	recStatus      (REC_STOPPED),
@@ -119,7 +118,6 @@ void Channel::copy(const Channel* src, pthread_mutex_t* pluginMutex)
 	volume_d        = src->volume_d;
 	pan             = src->pan;
 	mute_i          = src->mute_i;
-	mute_s          = src->mute_s;
 	mute            = src->mute;
 	solo            = src->solo;
 	hasActions      = src->hasActions;
