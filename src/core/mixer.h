@@ -31,6 +31,7 @@
 
 #include <pthread.h>
 #include <vector>
+#include "recorder.h"
 #include "../deps/rtaudio-mod/RtAudio.h"
 
 
@@ -41,6 +42,18 @@ namespace giada {
 namespace m {
 namespace mixer
 {
+struct FrameEvents
+{
+	int  frameLocal;
+	int  frameGlobal;
+	bool doQuantize;
+	bool onBar;
+	bool onBeat;
+	bool onFirstBeat;
+	std::vector<recorder::action*> actions;
+};
+
+
 void init(int framesInSeq, int framesInBuffer);
 
 /* allocVirtualInput
@@ -55,7 +68,7 @@ void close();
 Core method (callback) */
 
 int masterPlay(void* outBuf, void* inBuf, unsigned bufferSize, double streamTime,
-  RtAudioStreamStatus status, void* userData);
+	RtAudioStreamStatus status, void* userData);
 
 /* isSilent
 Is mixer silent? */

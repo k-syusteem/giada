@@ -459,15 +459,15 @@ int masterPlay(void* outBuf, void* inBuf, unsigned bufferSize,
 		processLineIn(in, j);
 		if (clock::isRunning()) {
 			lineInRec(in, j);
-			doQuantize(j);
-			testBar(j);
-			testFirstBeat(j);
-			readActions(j);
+			doQuantize(j);                  // CHANNELS
+			testBar(j);                     // CHANNELS
+			testFirstBeat(j);               // CHANNELS
+			readActions(j);                 // CHANNELS
 			clock::incrCurrentFrame();
 			testLastBeat();  // this test must be the last one
 			clock::sendMIDIsync();
 		}
-		sumChannels(j);
+		sumChannels(j);                   // CHANNELS
 	}
 
 	renderIO(out, in);

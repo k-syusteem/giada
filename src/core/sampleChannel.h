@@ -42,13 +42,6 @@ class SampleChannel : public Channel
 {
 private:
 
-	/* fillChan
-	Fills 'dest' buffer at point 'offset' with wave data taken from 'start'. If 
-	rewind=false don't rewind internal tracker. Returns new sample position, 
-	in frames. It resamples data if pitch != 1.0f. */
-
-	int fillChan(giada::m::AudioBuffer& dest, int start, int offset, bool rewind=true);
-
 	/* calcFadeoutStep
 	How many frames are left before the end of the sample? Is there enough room 
 	for a complete fadeout? Should we shorten it? */
@@ -59,11 +52,6 @@ private:
 	Computes any changes in volume done via envelope tool. */
 
 	void calcVolumeEnv(int frame);
-
-	/* reset
-	Rewinds tracker to the beginning of the sample. */
-
-	void reset(int frame);
 
 	/* fade methods
 	Prepare channel for fade, mixer will take care of the process during master 
@@ -84,11 +72,6 @@ private:
 
 	giada::m::AudioBuffer pChan;
 	giada::m::AudioBuffer vChanPreview;
-
-	/* frameRewind
-	Exact frame in which a rewind occurs. */
-
-	int frameRewind;
 
 	/* begin, end
 	Begin/end point to read wave data from/to. */
@@ -141,6 +124,18 @@ public:
 	int   getEnd() const;
 	float getPitch() const;
 
+	/* fillChan
+	Fills 'dest' buffer at point 'offset' with wave data taken from 'start'. If 
+	rewind=false don't rewind internal tracker. Returns new sample position, 
+	in frames. It resamples data if pitch != 1.0f. */
+
+	int fillChan(giada::m::AudioBuffer& dest, int start, int offset, bool rewind=true);
+
+	/* reset
+	Rewinds tracker to the beginning of the sample. */
+
+	void reset(int frame);
+
 	/* pushWave
 	Adds a new wave to an existing channel. */
 
@@ -185,6 +180,11 @@ public:
 	int   mode;            // mode: see const.h
 	bool  qWait;           // quantizer wait
   bool  inputMonitor;
+
+	/* frameRewind
+	Exact frame in which a rewind occurs. */
+
+	int frameRewind;
 
 	/* midi stuff */
 

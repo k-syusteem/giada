@@ -64,11 +64,6 @@ protected:
 
 	float calcPanning(int ch);
 
-	/* vChan
-	Virtual channel for internal processing. */
-	
-	giada::m::AudioBuffer vChan;
-
 #ifdef WITH_VST
 
 	/* MidiBuffer contains MIDI events. When ready, events are sent to each plugin 
@@ -252,7 +247,12 @@ public:
 #endif
 
   geChannel* guiChannel;        // pointer to a gChannel object, part of the GUI
+
+	/* vChan
+	Virtual channel for internal processing. */
 	
+	giada::m::AudioBuffer vChan;
+
 	/* previewMode
 	Whether the channel is in audio preview mode or not. */
 
