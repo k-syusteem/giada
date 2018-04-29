@@ -72,6 +72,7 @@ public:
 
 	void copy(const Channel* src, pthread_mutex_t* pluginMutex) override;
 	void clear() override;
+	void prepare(giada::m::mixer::FrameEvents fe, size_t index) override;
 	void process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in) override;
 	void preview(giada::m::AudioBuffer& out) override;
 	void start(int frame, bool doQuantize, int quantize, bool mixerIsRunning,

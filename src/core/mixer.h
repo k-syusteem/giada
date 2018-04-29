@@ -44,15 +44,48 @@ namespace mixer
 {
 struct FrameEvents
 {
-	int  frameLocal;
-	int  frameGlobal;
-	bool doQuantize;
-	bool onBar;
-	bool onBeat;
-	bool onFirstBeat;
+	int   frameLocal;
+	int   frameGlobal;
+	bool  doQuantize;
+	bool  onBar;
+	bool  onFirstBeat;
+	bool  clockRunning;
 	std::vector<recorder::action*> actions;
 };
 
+enum {    // const - what to do when a fadeout ends
+	DO_STOP   = 0x01,
+	DO_MUTE   = 0x02,
+	DO_MUTE_I = 0x04
+};
+
+enum {    // const - fade types
+	FADEOUT = 0x01,
+	XFADE   = 0x02
+};
+
+extern std::vector<Channel*> channels;
+
+extern bool   recording;         // is recording something?
+extern bool   ready;
+extern float  outVol;
+extern float  inVol;
+extern float  peakOut;
+extern float  peakIn;
+extern bool	  metronome;
+extern int    waitRec;       // delayComp guard
+extern bool   rewindWait;	   // rewind guard, if quantized
+extern bool   hasSolos;      // more than 0 channels soloed
+
+/* inToOut
+Copy, process and paste the input into the output, in order to obtain a "hear 
+what you're playing" feature. */
+
+extern bool inToOut;
+
+extern pthread_mutex_t mutex_recs;
+extern pthread_mutex_t mutex_chans;
+extern pthread_mutex_t mutex_plugins;
 
 void init(int framesInSeq, int framesInBuffer);
 
@@ -90,41 +123,6 @@ Copies the virtual channel input in the channels designed for input recording.
 Called by mixerHandler on stopInputRec(). */
 
 void mergeVirtualInput();
-
-enum {    // const - what to do when a fadeout ends
-	DO_STOP   = 0x01,
-	DO_MUTE   = 0x02,
-	DO_MUTE_I = 0x04
-};
-
-enum {    // const - fade types
-	FADEOUT = 0x01,
-	XFADE   = 0x02
-};
-
-extern std::vector<Channel*> channels;
-
-extern bool   recording;         // is recording something?
-extern bool   ready;
-extern float  outVol;
-extern float  inVol;
-extern float  peakOut;
-extern float  peakIn;
-extern bool	  metronome;
-extern int    waitRec;       // delayComp guard
-extern bool   rewindWait;	   // rewind guard, if quantized
-extern bool   hasSolos;      // more than 0 channels soloed
-
-/* inToOut
-Copy, process and paste the input into the output, in order to obtain a "hear 
-what you're playing" feature. */
-
-extern bool inToOut;
-
-extern pthread_mutex_t mutex_recs;
-extern pthread_mutex_t mutex_chans;
-extern pthread_mutex_t mutex_plugins;
-
 }}} // giada::m::mixer::;
 
 

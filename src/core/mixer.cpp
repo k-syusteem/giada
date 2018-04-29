@@ -457,17 +457,25 @@ int masterPlay(void* outBuf, void* inBuf, unsigned bufferSize,
 
 	for (unsigned j=0; j<bufferSize; j++) {
 		processLineIn(in, j);
+
+		FrameEvents fe;
+		fe.frameLocal   = j;
+		fe.frameGlobal  = clock::getCurrentFrame();
+		fe.doQuantize   = clock::getQuantize() == 0 || !clock::quantoHasPassed();
+		fe.onBar        = clock::isOnBar();
+		fe.onFirstBeat  = clock::isOnFirstBeat();
+		fe.clockRunning = clock::isRunning();
+		fe.actions      = recorder::getActionsOnFrame(clock::getCurrentFrame());
+
+		for (size_t i=0; i<channels.size(); i++)
+			channels[i]->prepare(fe, i);
+
 		if (clock::isRunning()) {
-			lineInRec(in, j);
-			doQuantize(j);                  // CHANNELS prepare
-			testBar(j);                     // CHANNELS prepare
-			testFirstBeat(j);               // CHANNELS prepare
-			readActions(j);                 // CHANNELS prepare
+			lineInRec(in, j);   // TODO - can go outside this loop
 			clock::incrCurrentFrame();
 			testLastBeat();  // this test must be the last one
 			clock::sendMIDIsync();
 		}
-		sumChannels(j);                   // CHANNELS prepare
 	}
 
 	renderIO(out, in);         // CHANNELS render
@@ -549,6 +557,4 @@ void mergeVirtualInput()
 	}
 	vChanInput.clear();
 }
-
-
 }}}; // giada::m::mixer::

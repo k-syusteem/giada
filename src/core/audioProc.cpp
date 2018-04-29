@@ -401,13 +401,13 @@ void calcVolumeEnv(SampleChannel* ch, int globalFrame)
 /* -------------------------------------------------------------------------- */
 
 
-void parseAction(SampleChannel* ch, recorder::action a, int localFrame, 
+void parseAction(SampleChannel* ch, const recorder::action* a, int localFrame, 
 	int globalFrame)
 {
 	if (ch->readActions == false)
 		return;
 
-	switch (a.type) {
+	switch (a->type) {
 		case G_ACTION_KEYPRESS:
 			if (ch->mode & SINGLE_ANY)
 				start(ch, localFrame, false, false, false);
@@ -436,7 +436,7 @@ void parseAction(SampleChannel* ch, recorder::action a, int localFrame,
 /* -------------------------------------------------------------------------- */
 
 
-void sum(SampleChannel* ch, int localFrame)
+void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 {
 	if (ch->wave == nullptr || ch->status & ~(STATUS_PLAY | STATUS_ENDING))
 		return;
@@ -445,7 +445,7 @@ void sum(SampleChannel* ch, int localFrame)
 
 		/* volume envelope, only if seq is running */
 
-		if (clock::isRunning()) {
+		if (isClockRunning) {
 			ch->volume_i += ch->volume_d;
 			if (ch->volume_i < 0.0f)
 				ch->volume_i = 0.0f;
@@ -518,7 +518,7 @@ void sum(SampleChannel* ch, int localFrame)
 
 		if (ch->mode & (SINGLE_BASIC | SINGLE_PRESS | SINGLE_RETRIG) ||
 			 (ch->mode == SINGLE_ENDLESS && ch->status == STATUS_ENDING)   ||
-			 (ch->mode & LOOP_ANY && !clock::isRunning()))     // stop loops when the seq is off
+			 (ch->mode & LOOP_ANY && !isClockRunning))     // stop loops when the seq is off
 		{
 			ch->status = STATUS_OFF;
 			ch->sendMidiLplay();/* MIDI TODO ********** */
@@ -550,8 +550,17 @@ void sum(SampleChannel* ch, int localFrame)
 /* -------------------------------------------------------------------------- */
 
 
-void prepare(SampleChannel* ch, mixer::FrameEvents ev)
+void prepare(SampleChannel* ch, mixer::FrameEvents fe, size_t chanIndex)
 {
-
+	quantize(ch, chanIndex, fe.frameLocal, fe.frameGlobal);
+	if (fe.clockRunning) {
+		if (fe.onBar)
+			onBar(ch, fe.frameLocal);
+		if (fe.onFirstBeat)
+			onFirstBeat(ch, fe.frameLocal);
+		for (const recorder::action* action : fe.actions)
+			parseAction(ch, action, fe.frameLocal, fe.frameGlobal);
+	}
+	sum(ch, fe.frameLocal, fe.clockRunning);
 }
 }}};

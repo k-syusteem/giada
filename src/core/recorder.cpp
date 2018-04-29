@@ -661,6 +661,20 @@ void stopOverdub(int currentFrame, int totalFrames, pthread_mutex_t* mixerMutex)
 /* -------------------------------------------------------------------------- */
 
 
+vector<action*> getActionsOnFrame(int frame)
+{
+	for (size_t i=0; i<frames.size(); i++) {
+		if (recorder::frames.at(i) != frame)
+			continue;
+		return global.at(i);
+	}
+	return vector<action*>();
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 void forEachAction(std::function<void(const action*)> f)
 {
 	for (const vector<action*> actions : recorder::global)

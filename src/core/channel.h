@@ -32,6 +32,7 @@
 #include <vector>
 #include <string>
 #include <pthread.h>
+#include "mixer.h"
 #include "midiMapConf.h"
 #include "midiEvent.h"
 #include "recorder.h"
@@ -88,6 +89,11 @@ public:
 	Makes a shallow copy (no vChan/pChan allocation) of another channel. */
 
 	virtual void copy(const Channel* src, pthread_mutex_t* pluginMutex) = 0;
+
+	/* prepare
+	Prepares channel for rendering. This is called on each frame. */
+
+	virtual void prepare(giada::m::mixer::FrameEvents fe, size_t index) = 0;
 
 	/* process
 	Merges vChannels into buffer, plus plugin processing (if any). Warning:

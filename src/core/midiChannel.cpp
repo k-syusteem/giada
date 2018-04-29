@@ -71,6 +71,15 @@ void MidiChannel::copy(const Channel* src_, pthread_mutex_t* pluginMutex)
 /* -------------------------------------------------------------------------- */
 
 
+void MidiChannel::prepare(mixer::FrameEvents fe, size_t index)
+{
+	// TODO
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 #ifdef WITH_VST
 
 void MidiChannel::addVstMidiEvent(uint32_t msg, int localFrame)

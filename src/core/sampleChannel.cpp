@@ -32,6 +32,7 @@
 #include "../utils/fs.h"
 #include "../utils/string.h"
 #include "patch.h"
+#include "audioProc.h"
 #include "channelManager.h"
 #include "const.h"
 #include "conf.h"
@@ -143,6 +144,15 @@ void SampleChannel::copy(const Channel* src_, pthread_mutex_t* pluginMutex)
 
 	if (src->wave)
 		pushWave(new Wave(*src->wave)); // invoke Wave's copy constructor
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void SampleChannel::prepare(mixer::FrameEvents fe, size_t index)
+{
+	audioProc::prepare(this, fe, index);
 }
 
 

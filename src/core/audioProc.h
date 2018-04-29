@@ -12,7 +12,7 @@ namespace giada {
 namespace m {
 namespace audioProc
 {
-void prepare(SampleChannel* ch, mixer::FrameEvents ev);
+void prepare(SampleChannel* ch, mixer::FrameEvents ev, size_t chanIndex);
 }}};
 
 
