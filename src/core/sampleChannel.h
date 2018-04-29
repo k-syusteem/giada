@@ -48,15 +48,6 @@ private:
 
 	void calcFadeoutStep();
 
-
-	/* fade methods
-	Prepare channel for fade, mixer will take care of the process during master 
-	play. */
-
-	void setFadeIn(bool internal);
-	void setFadeOut(int actionPostFadeout);
-	void setXFade(int frame);
-
 	/* rsmp_state, rsmp_data
 	Structs from libsamplerate. */
 
@@ -67,12 +58,6 @@ private:
 	Extra virtual channel for audio preview. */
 
 	giada::m::AudioBuffer vChanPreview;
-
-	/* begin, end
-	Begin/end point to read wave data from/to. */
-
-	int begin;
-	int end;
 	
 	float pitch;
 	float boost;
@@ -162,6 +147,14 @@ public:
 
 	void calcVolumeEnv(int frame);
 
+	/* fade methods
+	Prepare channel for fade, mixer will take care of the process during master 
+	play. */
+
+	void setFadeIn(bool internal);
+	void setFadeOut(int actionPostFadeout);
+	void setXFade(int frame);
+
 	/* onPreviewEnd
 	A callback fired when audio preview ends. */
 
@@ -188,6 +181,13 @@ public:
 	float fadeoutStep;     // fadeout decrease
   int		fadeoutEnd;      // what to do when fadeout ends
   
+
+	/* begin, end
+	Begin/end point to read wave data from/to. */
+
+	int begin;
+	int end;
+
 	/* frameRewind
 	Exact frame in which a rewind occurs. */
 

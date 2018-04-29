@@ -54,8 +54,6 @@ using namespace giada::m;
 SampleChannel::SampleChannel(int bufferSize, bool inputMonitor)
 	: Channel          (G_CHANNEL_SAMPLE, STATUS_EMPTY, bufferSize),
 		rsmp_state       (nullptr),
-		begin            (0),
-		end              (0),
 		pitch            (G_DEFAULT_PITCH),
 		boost            (G_DEFAULT_BOOST),
 		fadeoutTracker   (0),
@@ -71,6 +69,8 @@ SampleChannel::SampleChannel(int bufferSize, bool inputMonitor)
 		fadeoutOn        (false),
 		fadeoutVol       (1.0f),
 		fadeoutStep      (G_DEFAULT_FADEOUT_STEP),
+		begin            (0),
+		end              (0),
 		frameRewind      (-1),
 		midiInReadActions(0x0),
 		midiInPitch      (0x0)
