@@ -72,8 +72,8 @@ int readPatchPlugins(vector<patch::plugin_t>* list, int type)
 	for (unsigned i=0; i<list->size(); i++) {
 		patch::plugin_t *ppl = &list->at(i);
 		// TODO use glue_addPlugin()
-		Plugin *plugin = pluginHost::addPlugin(ppl->path.c_str(), type,
-				&mixer::mutex_plugins, nullptr);
+		Plugin *plugin = pluginHost::addPlugin(ppl->path.c_str(), type, 
+			&mixer::mutex, nullptr);
 		if (plugin != nullptr) {
 			plugin->setBypass(ppl->bypass);
 			for (unsigned j=0; j<ppl->params.size(); j++)
@@ -142,10 +142,10 @@ Channel* addChannel(int type)
 		return nullptr;
 
 	while (true) {
-		if (pthread_mutex_trylock(&mixer::mutex_chans) != 0)
+		if (pthread_mutex_trylock(&mixer::mutex) != 0)
 			continue;
 		mixer::channels.push_back(ch);
-		pthread_mutex_unlock(&mixer::mutex_chans);
+		pthread_mutex_unlock(&mixer::mutex);
 		break;
 	}
 
@@ -162,12 +162,12 @@ Channel* addChannel(int type)
 void deleteChannel(Channel* target)
 {
 	while (true) {
-		if (pthread_mutex_trylock(&mixer::mutex_chans) != 0)
+		if (pthread_mutex_trylock(&mixer::mutex) != 0)
 			continue;
 		auto it = std::find(mixer::channels.begin(), mixer::channels.end(), target);
 		if (it != mixer::channels.end()) 
 			mixer::channels.erase(it);
-		pthread_mutex_unlock(&mixer::mutex_chans);
+		pthread_mutex_unlock(&mixer::mutex);
 		return;
 	}
 }

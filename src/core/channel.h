@@ -79,10 +79,10 @@ public:
 
 	virtual void copy(const Channel* src, pthread_mutex_t* pluginMutex) = 0;
 
-	/* prepare
+	/* parseEvents
 	Prepares channel for rendering. This is called on each frame. */
 
-	virtual void prepare(giada::m::mixer::FrameEvents fe, size_t index) = 0;
+	virtual void parseEvents(giada::m::mixer::FrameEvents fe, size_t index) = 0;
 
 	/* process
 	Merges vChannels into buffer, plus plugin processing (if any). Warning:
@@ -165,11 +165,11 @@ public:
 
 	virtual void rewind() = 0;
 
-	/* clear
-	Clears all memory buffers. This is actually useful to sample channels only. 
-	TODO - please rename it to clearBuffers. */
+	/* fillBuffer
+	Fill audio buffer with audio data from the internal source. This is actually 
+	useful to sample channels only. */
 
-	virtual void clear() = 0;
+	virtual void fillBuffer() = 0;
 
 	/* canInputRec
 	Tells whether a channel can accept and handle input audio. Always false for

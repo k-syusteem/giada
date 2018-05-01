@@ -150,18 +150,18 @@ void SampleChannel::copy(const Channel* src_, pthread_mutex_t* pluginMutex)
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::prepare(mixer::FrameEvents fe, size_t index)
+void SampleChannel::parseEvents(mixer::FrameEvents fe, size_t index)
 {
-	audioProc::prepare(this, fe, index);
+	audioProc::parseEvents(this, fe, index);
 }
 
 
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::clear()
+void SampleChannel::fillBuffer()
 {
-	audioProc::clearBuffers(this);
+	audioProc::fillBuffer(this);
 }
 
 

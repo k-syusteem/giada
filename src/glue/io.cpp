@@ -220,7 +220,7 @@ void keyRelease(SampleChannel* ch, bool ctrl, bool shift)
 
 	if (ch->mode == SINGLE_PRESS && recorder::canRec(ch, clock::isRunning(), mixer::recording))
 		recorder::stopOverdub(clock::getCurrentFrame(), clock::getFramesInLoop(),
-			&mixer::mutex_recs);
+			&mixer::mutex);
 
 	/* the GUI update is done by gui_refresh() */
 

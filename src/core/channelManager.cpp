@@ -105,7 +105,7 @@ void readPlugins_(Channel* ch, const patch::channel_t& pch)
 
 	for (const patch::plugin_t& ppl : pch.plugins) {
 		Plugin* plugin = pluginHost::addPlugin(ppl.path, pluginHost::CHANNEL,
-			&mixer::mutex_plugins, ch);
+			&mixer::mutex, ch);
 		if (plugin == nullptr)
 			continue;
 

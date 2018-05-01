@@ -198,7 +198,7 @@ void init_shutdown()
 
 #ifdef WITH_VST
 
-	pluginHost::freeAllStacks(&mixer::channels, &mixer::mutex_plugins);
+	pluginHost::freeAllStacks(&mixer::channels, &mixer::mutex);
   pluginHost::close();
 	gu_log("[init] PluginHost cleaned up\n");
 

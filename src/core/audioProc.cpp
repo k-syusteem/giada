@@ -559,7 +559,7 @@ void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart,
 /* -------------------------------------------------------------------------- */
 
 
-void clearBuffers(SampleChannel* ch)
+void fillBuffer(SampleChannel* ch)
 {
 	/** TODO - these clear() may be done only if status PLAY | ENDING (if below),
 	 * but it would require extra clearPChan calls when samples stop */
@@ -579,7 +579,7 @@ void clearBuffers(SampleChannel* ch)
 /* -------------------------------------------------------------------------- */
 
 
-void prepare(SampleChannel* ch, mixer::FrameEvents fe, size_t chanIndex)
+void parseEvents(SampleChannel* ch, mixer::FrameEvents fe, size_t chanIndex)
 {
 	quantize(ch, chanIndex, fe.frameLocal, fe.frameGlobal);
 	if (fe.clockRunning) {

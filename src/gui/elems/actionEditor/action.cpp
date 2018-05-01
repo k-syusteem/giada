@@ -207,13 +207,13 @@ void geAction::delAction()
 
 	if (ch->mode == SINGLE_PRESS) {
 		recorder::deleteAction(parent->chan->index, frame_a, G_ACTION_KEYPRESS,
-      false, &mixer::mutex_recs);
+      false, &mixer::mutex);
 		recorder::deleteAction(parent->chan->index, frame_b, G_ACTION_KEYREL,
-      false, &mixer::mutex_recs);
+      false, &mixer::mutex);
 	}
 	else
 		recorder::deleteAction(parent->chan->index, frame_a, type, false,
-      &mixer::mutex_recs);
+      &mixer::mutex);
 
   parent->chan->hasActions = recorder::hasActions(parent->chan->index);
 

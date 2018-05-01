@@ -157,11 +157,6 @@ void clearAllBuffers(AudioBuffer& outBuf)
 {
 	outBuf.clear();
 	vChanInToOut.clear();
-
-	pthread_mutex_lock(&mutex_chans);
-	for (Channel* channel : channels)
-		channel->clear();
-	pthread_mutex_unlock(&mutex_chans);
 }
 
 
@@ -263,22 +258,16 @@ content to the output buffer). Process plugins too, if any. */
 
 void renderIO(AudioBuffer& outBuf, const AudioBuffer& inBuf)
 {
+	//pthread_mutex_lock(&mutex_chans);
 	for (Channel* channel : channels)
 		channel->process(outBuf, inBuf);
-/*
-	pthread_mutex_lock(&mutex_chans);
-	for (Channel* ch : channels) {
-		if (isChannelAudible(ch))
-			ch->process(outBuf, inBuf);
-		ch->preview(outBuf);
-	}
-	pthread_mutex_unlock(&mutex_chans);
-*/
+	//pthread_mutex_unlock(&mutex_chans);
+
 #ifdef WITH_VST
-	pthread_mutex_lock(&mutex_plugins);
+	//pthread_mutex_lock(&mutex_plugins);
 	pluginHost::processStack(outBuf, pluginHost::MASTER_OUT);
 	pluginHost::processStack(vChanInToOut, pluginHost::MASTER_IN);
-	pthread_mutex_unlock(&mutex_plugins);
+	//pthread_mutex_unlock(&mutex_plugins);
 #endif
 }
 
@@ -383,9 +372,7 @@ bool   rewindWait   = false;
 bool   hasSolos     = false;
 bool   inToOut      = false;
 
-pthread_mutex_t mutex_recs;
-pthread_mutex_t mutex_chans;
-pthread_mutex_t mutex_plugins;
+pthread_mutex_t mutex;
 
 
 /* -------------------------------------------------------------------------- */
@@ -409,9 +396,7 @@ void init(int framesInSeq, int framesInBuffer)
 
 	hasSolos = false;
 
-	pthread_mutex_init(&mutex_recs, nullptr);
-	pthread_mutex_init(&mutex_chans, nullptr);
-	pthread_mutex_init(&mutex_plugins, nullptr);
+	pthread_mutex_init(&mutex, nullptr);
 
 	rewind();
 }
@@ -435,6 +420,8 @@ int masterPlay(void* outBuf, void* inBuf, unsigned bufferSize,
 	if (!ready)
 		return 0;
 
+	pthread_mutex_lock(&mutex);
+
 #ifdef __linux__
 	clock::recvJackSync();
 #endif
@@ -449,8 +436,11 @@ int masterPlay(void* outBuf, void* inBuf, unsigned bufferSize,
 
 	clearAllBuffers(out);
 
+	for (Channel* channel : channels)
+		channel->fillBuffer();
+
 	for (unsigned j=0; j<bufferSize; j++) {
-		processLineIn(in, j);
+		processLineIn(in, j);   // TODO - can go outside this loop
 
 		FrameEvents fe;
 		fe.frameLocal   = j;
@@ -462,7 +452,7 @@ int masterPlay(void* outBuf, void* inBuf, unsigned bufferSize,
 		fe.actions      = recorder::getActionsOnFrame(clock::getCurrentFrame());
 
 		for (size_t i=0; i<channels.size(); i++)
-			channels[i]->prepare(fe, i);
+			channels[i]->parseEvents(fe, i);
 
 		if (clock::isRunning()) {
 			lineInRec(in, j);   // TODO - can go outside this loop
@@ -491,6 +481,8 @@ int masterPlay(void* outBuf, void* inBuf, unsigned bufferSize,
 	destroy memory allocated by RtAudio ---> havoc. */
 	out.setData(nullptr, 0, 0);
 	in.setData(nullptr, 0, 0);
+
+	pthread_mutex_unlock(&mutex);
 
 	return 0;
 }

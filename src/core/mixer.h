@@ -83,9 +83,7 @@ what you're playing" feature. */
 
 extern bool inToOut;
 
-extern pthread_mutex_t mutex_recs;
-extern pthread_mutex_t mutex_chans;
-extern pthread_mutex_t mutex_plugins;
+extern pthread_mutex_t mutex;
 
 void init(int framesInSeq, int framesInBuffer);
 

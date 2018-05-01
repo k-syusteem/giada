@@ -71,7 +71,7 @@ void MidiChannel::copy(const Channel* src_, pthread_mutex_t* pluginMutex)
 /* -------------------------------------------------------------------------- */
 
 
-void MidiChannel::prepare(mixer::FrameEvents fe, size_t index)
+void MidiChannel::parseEvents(mixer::FrameEvents fe, size_t index)
 {
 	// TODO
 }
@@ -354,4 +354,4 @@ bool MidiChannel::canInputRec()
 /* -------------------------------------------------------------------------- */
 
 
-void MidiChannel::clear() {}
+void MidiChannel::fillBuffer() {}

@@ -134,7 +134,7 @@ void deleteChannel(Channel* ch)
 	recorder::clearChan(ch->index);
 	ch->hasActions = false;
 #ifdef WITH_VST
-	pluginHost::freeStack(pluginHost::CHANNEL, &mixer::mutex_plugins, ch);
+	pluginHost::freeStack(pluginHost::CHANNEL, &mixer::mutex, ch);
 #endif
 	Fl::lock();
 	G_MainWin->keyboard->deleteChannel(ch->guiChannel);
@@ -204,7 +204,7 @@ int cloneChannel(Channel* src)
 		ch, src->guiChannel->getSize());
 
 	ch->guiChannel = gch;
-	ch->copy(src, &mixer::mutex_plugins);
+	ch->copy(src, &mixer::mutex);
 
 	G_MainWin->keyboard->updateChannel(ch->guiChannel);
 	return true;
@@ -282,7 +282,7 @@ void toggleMute(Channel* ch, bool gui)
 		}
 		else
 		 recorder::stopOverdub(clock::getCurrentFrame(), clock::getFramesInLoop(),
-			&mixer::mutex_recs);
+			&mixer::mutex);
 	}
 
 	ch->mute ? ch->unsetMute(false) : ch->setMute(false);
