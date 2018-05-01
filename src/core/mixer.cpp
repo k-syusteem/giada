@@ -496,6 +496,7 @@ void close()
 	clock::stop();
 	while (channels.size() > 0)
 		mh::deleteChannel(channels.at(0));
+	pthread_mutex_destroy(&mutex);
 }
 
 

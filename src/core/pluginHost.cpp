@@ -141,6 +141,7 @@ pthread_mutex_t mutex_midi;
 void close()
 {
 	messageManager->deleteInstance();
+	pthread_mutex_destroy(&mutex_midi);
 }
 
 
