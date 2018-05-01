@@ -1,9 +1,11 @@
+#include <cassert>
 #include <samplerate.h>
 #include "const.h"
 #include "conf.h"
 #include "wave.h"
 #include "clock.h"
 #include "kernelAudio.h"
+#include "pluginHost.h"
 #include "sampleChannel.h"
 #include "audioProc.h"
 
@@ -63,83 +65,6 @@ void rewind(SampleChannel* ch, int localFrame)
 
 	if (localFrame > 0 && ch->status & (STATUS_PLAY | STATUS_ENDING))
 		ch->tracker = fillBuffer(ch, ch->vChan, ch->tracker, localFrame);
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-/* TODO isUserGenerated is always false*/
-/* TODO join doQuantize, forceStart into one parameter */
-void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart, 
-	bool isUserGenerated)
-{
-	switch (ch->status)	{
-		case STATUS_EMPTY:
-		case STATUS_MISSING:
-		case STATUS_WRONG:
-		{
-			return;
-		}
-		case STATUS_OFF:
-		{
-			if (ch->mode & LOOP_ANY) {
-				if (forceStart) {
-					ch->status  = STATUS_PLAY;
-					ch->tracker = localFrame;
-				}
-				else
-					ch->status = STATUS_WAIT;
-				ch->sendMidiLplay();   /* MIDI TODO ********** */
-			}
-			else {
-				if (clock::getQuantize() > 0 && clock::isRunning() && doQuantize)
-					ch->qWait = true;
-				else {
-					ch->status = STATUS_PLAY;
-					ch->sendMidiLplay();   /* MIDI TODO ********** */
-
-					/* Do fillChan only if this is not a user-generated event (i.e. is an
-					action read by Mixer). Otherwise clear() will take take of calling
-					fillChan on the next cycle. */
-
-					if (!isUserGenerated)
-						ch->tracker = fillBuffer(ch, ch->vChan, ch->tracker, localFrame);
-				}
-			}
-			break;
-		}
-		case STATUS_PLAY:
-		{
-			if (ch->mode == SINGLE_BASIC)
-				ch->setFadeOut(SampleChannel::DO_STOP);
-			else
-			if (ch->mode == SINGLE_RETRIG) {
-				if (clock::getQuantize() > 0 && clock::isRunning() && doQuantize)
-					ch->qWait = true;
-				else
-					rewind(ch, localFrame);
-			}
-			else
-			if (ch->mode & (LOOP_ANY | SINGLE_ENDLESS)) {
-				ch->status = STATUS_ENDING;
-				ch->sendMidiLplay();   /* MIDI TODO ********************/
-			}
-			break;
-		}
-		case STATUS_WAIT:
-		{
-			ch->status = STATUS_OFF;
-			ch->sendMidiLplay();   /* MIDI TODO ********************/
-			break;
-		}
-		case STATUS_ENDING:
-		{
-			ch->status = STATUS_PLAY;
-			ch->sendMidiLplay();   /* MIDI TODO ********************/
-			break;
-		}
-	}
 }
 
 
@@ -547,6 +472,81 @@ void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
+
+
+/* TODO join doQuantize, forceStart into one parameter */
+void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart, 
+	bool isUserGenerated)
+{
+	switch (ch->status)	{
+		case STATUS_EMPTY:
+		case STATUS_MISSING:
+		case STATUS_WRONG:
+		{
+			return;
+		}
+		case STATUS_OFF:
+		{
+			if (ch->mode & LOOP_ANY) {
+				if (forceStart) {
+					ch->status  = STATUS_PLAY;
+					ch->tracker = localFrame;
+				}
+				else
+					ch->status = STATUS_WAIT;
+				ch->sendMidiLplay();   /* MIDI TODO ********** */
+			}
+			else {
+				if (clock::getQuantize() > 0 && clock::isRunning() && doQuantize)
+					ch->qWait = true;
+				else {
+					ch->status = STATUS_PLAY;
+					ch->sendMidiLplay();   /* MIDI TODO ********** */
+
+					/* Do fillChan only if this is not a user-generated event (i.e. is an
+					action read by Mixer). Otherwise clear() will take take of calling
+					fillChan on the next cycle. */
+
+					if (!isUserGenerated)
+						ch->tracker = fillBuffer(ch, ch->vChan, ch->tracker, localFrame);
+				}
+			}
+			break;
+		}
+		case STATUS_PLAY:
+		{
+			if (ch->mode == SINGLE_BASIC)
+				ch->setFadeOut(SampleChannel::DO_STOP);
+			else
+			if (ch->mode == SINGLE_RETRIG) {
+				if (clock::getQuantize() > 0 && clock::isRunning() && doQuantize)
+					ch->qWait = true;
+				else
+					rewind(ch, localFrame);
+			}
+			else
+			if (ch->mode & (LOOP_ANY | SINGLE_ENDLESS)) {
+				ch->status = STATUS_ENDING;
+				ch->sendMidiLplay();   /* MIDI TODO ********************/
+			}
+			break;
+		}
+		case STATUS_WAIT:
+		{
+			ch->status = STATUS_OFF;
+			ch->sendMidiLplay();   /* MIDI TODO ********************/
+			break;
+		}
+		case STATUS_ENDING:
+		{
+			ch->status = STATUS_PLAY;
+			ch->sendMidiLplay();   /* MIDI TODO ********************/
+			break;
+		}
+	}
+}
+
+
 /* -------------------------------------------------------------------------- */
 
 
@@ -562,5 +562,77 @@ void prepare(SampleChannel* ch, mixer::FrameEvents fe, size_t chanIndex)
 			parseAction(ch, action, fe.frameLocal, fe.frameGlobal);
 	}
 	sum(ch, fe.frameLocal, fe.clockRunning);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void process(SampleChannel* ch, m::AudioBuffer& out, const m::AudioBuffer& in)
+{
+	/* normal play */
+	/* normal play */
+	/* normal play */
+	if (mixer::isChannelAudible(ch))
+	{
+		assert(out.countSamples() == ch->vChan.countSamples());
+		assert(in.countSamples()  == ch->vChan.countSamples());
+
+		/* If armed and inbuffer is not nullptr (i.e. input device available) and
+	  input monitor is on, copy input buffer to vChan: this enables the input
+	  monitoring. The vChan will be overwritten later by pluginHost::processStack,
+	  so that you would record "clean" audio (i.e. not plugin-processed). */
+
+		if (ch->armed && in.isAllocd() && ch->inputMonitor)
+			for (int i=0; i<ch->vChan.countFrames(); i++)
+				for (int j=0; j<ch->vChan.countChannels(); j++)
+					ch->vChan[i][j] += in[i][j];   // add, don't overwrite
+
+	#ifdef WITH_VST
+		pluginHost::processStack(ch->vChan, pluginHost::CHANNEL, ch);
+	#endif
+
+			for (int i=0; i<out.countFrames(); i++)
+				for (int j=0; j<out.countChannels(); j++)
+					out[i][j] += ch->vChan[i][j] * ch->volume * ch->calcPanning(j) * ch->boost;
+	}
+	/* normal play */
+	/* normal play */
+	/* normal play */
+
+
+
+	/* preview */
+	/* preview */
+	/* preview */
+	if (ch->previewMode != G_PREVIEW_NONE) {
+		ch->vChanPreview.clear();
+
+		/* If the tracker exceedes the end point and preview is looped, split the 
+		rendering as in SampleChannel::reset(). */
+
+		if (ch->trackerPreview + ch->bufferSize >= ch->end) {
+			int offset = ch->end - ch->trackerPreview;
+			ch->trackerPreview = fillBuffer(ch, ch->vChanPreview, ch->trackerPreview, 0, false);
+			ch->trackerPreview = ch->begin;
+			if (ch->previewMode == G_PREVIEW_LOOP)
+				ch->trackerPreview = fillBuffer(ch, ch->vChanPreview, ch->begin, offset, false);
+			else
+			if (ch->previewMode == G_PREVIEW_NORMAL) {
+				ch->previewMode = G_PREVIEW_NONE;
+				if (ch->onPreviewEnd)
+					ch->onPreviewEnd();
+			}
+		}
+		else
+			ch->trackerPreview = fillBuffer(ch, ch->vChanPreview, ch->trackerPreview, 0, false);
+
+		for (int i=0; i<out.countFrames(); i++)
+			for (int j=0; j<out.countChannels(); j++)
+				out[i][j] += ch->vChanPreview[i][j] * ch->volume * ch->calcPanning(j) * ch->boost;
+	}
+	/* preview */	
+	/* preview */
+	/* preview */
 }
 }}};

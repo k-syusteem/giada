@@ -36,6 +36,7 @@
 #include "../utils/gui.h"
 #include "../utils/log.h"
 #include "../utils/math.h"
+#include "../core/audioProc.h"
 #include "../core/recorder.h"
 #include "../core/kernelAudio.h"
 #include "../core/mixer.h"
@@ -143,7 +144,7 @@ void cleanPress(SampleChannel* ch, int velocity)
 	if (ch->mode & SINGLE_ANY && ch->midiInVeloAsVol)
 		ch->setVolumeI(u::math::map((float)velocity, 0.0f, 127.0f, 0.0f, 1.0f));
 
-	ch->start(0, true, m::clock::getQuantize(), m::clock::isRunning(), false, true);
+	m::audioProc::start(ch, 0, true, false, true);
 }
 
 } // {anonymous}

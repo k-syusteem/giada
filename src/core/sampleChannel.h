@@ -53,17 +53,11 @@ private:
 
 	SRC_STATE* rsmp_state;
 	SRC_DATA   rsmp_data;
-
-	/* vChanPreview
-	Extra virtual channel for audio preview. */
-
-	giada::m::AudioBuffer vChanPreview;
 	
 	float pitch;
-	float boost;
 
 
-	int   fadeoutTracker;  // tracker fadeout, xfade only
+	int fadeoutTracker;  // tracker fadeout, xfade only
 
 public:
 
@@ -166,6 +160,11 @@ public:
 
 	giada::m::AudioBuffer pChan;
 
+	/* vChanPreview
+	Extra virtual channel for audio preview. */
+
+	giada::m::AudioBuffer vChanPreview;
+	
 	Wave* wave;
 	int   tracker;         // chan position
 	int   trackerPreview;  // chan position for audio preview
@@ -182,6 +181,7 @@ public:
 	float fadeoutStep;     // fadeout decrease
   int		fadeoutEnd;      // what to do when fadeout ends
   
+	float boost;
 
 	/* begin, end
 	Begin/end point to read wave data from/to. */

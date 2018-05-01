@@ -60,11 +60,6 @@ protected:
 
 	void sendMidiLmessage(uint32_t learn, const giada::m::midimap::message_t& msg);
 
-	/* calcPanning
-	Given an audio channel (stereo: 0 or 1) computes the current panning value. */
-
-	float calcPanning(int ch);
-
 #ifdef WITH_VST
 
 	/* MidiBuffer contains MIDI events. When ready, events are sent to each plugin 
@@ -74,12 +69,6 @@ protected:
 	juce::MidiBuffer midiBuffer;
 
 #endif
-
-	/* bufferSize
-	Size of every buffer in this channel (vChan, pChan) */
-
-	int bufferSize;
-
 	
 public:
 
@@ -211,6 +200,11 @@ public:
 
 	virtual bool allocBuffers();
 
+	/* calcPanning
+	Given an audio channel (stereo: 0 or 1) computes the current panning value. */
+
+	float calcPanning(int ch);
+
 	bool isPlaying() const;
 	float getPan() const;
 	bool isPreview() const;
@@ -243,6 +237,11 @@ public:
 	void clearMidiBuffer();
 
 #endif
+
+	/* bufferSize
+	Size of every buffer in this channel (vChan, pChan) */
+
+	int bufferSize;
 
   geChannel* guiChannel;        // pointer to a gChannel object, part of the GUI
 

@@ -89,15 +89,6 @@ int inputTracker = 0;
 
 /* -------------------------------------------------------------------------- */
 
-
-bool isChannelAudible(Channel* ch)
-{
-	return !hasSolos || (hasSolos && ch->solo);
-}
-
-
-/* -------------------------------------------------------------------------- */
-
 /* computePeak */
 
 void computePeak(const AudioBuffer& buf, float& peak, unsigned frame)
@@ -181,7 +172,7 @@ Reads all recorded actions. */
 
 void readActions(unsigned frame)
 {
-	pthread_mutex_lock(&mutex_recs);
+/*	pthread_mutex_lock(&mutex_recs);
 	for (unsigned i=0; i<recorder::frames.size(); i++) {
 		if (recorder::frames.at(i) != clock::getCurrentFrame())
 			continue;
@@ -192,7 +183,7 @@ void readActions(unsigned frame)
 		}
 		break;
 	}
-	pthread_mutex_unlock(&mutex_recs);
+	pthread_mutex_unlock(&mutex_recs);*/
 }
 
 
@@ -212,11 +203,11 @@ void doQuantize(unsigned frame)
 		rewindWait = false;
 		rewind();
 	}
-
+/*
 	pthread_mutex_lock(&mutex_chans);
 	for (unsigned i=0; i<channels.size(); i++)
 		channels.at(i)->quantize(i, frame, clock::getCurrentFrame());
-	pthread_mutex_unlock(&mutex_chans);
+	pthread_mutex_unlock(&mutex_chans);*/
 }
 
 
@@ -228,11 +219,11 @@ This is required for G_CHANNEL_SAMPLE only */
 
 void sumChannels(unsigned frame)
 {
-	pthread_mutex_lock(&mutex_chans);
+/*	pthread_mutex_lock(&mutex_chans);
 	for (Channel* ch : channels)
 		if (ch->type == G_CHANNEL_SAMPLE)
 			static_cast<SampleChannel*>(ch)->sum(frame, clock::isRunning());
-	pthread_mutex_unlock(&mutex_chans);
+	pthread_mutex_unlock(&mutex_chans);*/
 }
 
 
@@ -272,6 +263,7 @@ content to the output buffer). Process plugins too, if any. */
 
 void renderIO(AudioBuffer& outBuf, const AudioBuffer& inBuf)
 {
+/*
 	pthread_mutex_lock(&mutex_chans);
 	for (Channel* ch : channels) {
 		if (isChannelAudible(ch))
@@ -279,7 +271,7 @@ void renderIO(AudioBuffer& outBuf, const AudioBuffer& inBuf)
 		ch->preview(outBuf);
 	}
 	pthread_mutex_unlock(&mutex_chans);
-
+*/
 #ifdef WITH_VST
 	pthread_mutex_lock(&mutex_plugins);
 	pluginHost::processStack(outBuf, pluginHost::MASTER_OUT);
@@ -336,10 +328,10 @@ void testBar(unsigned frame)
 	if (metronome)
 		tickPlay = true;
 
-	pthread_mutex_lock(&mutex_chans);
+/*	pthread_mutex_lock(&mutex_chans);
 	for (Channel* ch : channels)
 		ch->onBar(frame);
-	pthread_mutex_unlock(&mutex_chans);
+	pthread_mutex_unlock(&mutex_chans);*/
 }
 
 
@@ -350,10 +342,10 @@ void testFirstBeat(unsigned frame)
 {
 	if (!clock::isOnFirstBeat())
 		return;
-	pthread_mutex_lock(&mutex_chans);
+/*	pthread_mutex_lock(&mutex_chans);
 	for (Channel* ch : channels)
 		ch->onZero(frame, conf::recsStopOnChanHalt);
-	pthread_mutex_unlock(&mutex_chans);
+	pthread_mutex_unlock(&mutex_chans);*/
 }
 
 
@@ -472,13 +464,19 @@ int masterPlay(void* outBuf, void* inBuf, unsigned bufferSize,
 
 		if (clock::isRunning()) {
 			lineInRec(in, j);   // TODO - can go outside this loop
+			doQuantize(j);                  // CHANNELS prepare
+			testBar(j);                     // CHANNELS prepare
+			testFirstBeat(j);               // CHANNELS prepare
+			readActions(j);                 // CHANNELS prepare
 			clock::incrCurrentFrame();
 			testLastBeat();  // this test must be the last one
 			clock::sendMIDIsync();
 		}
 	}
 
-	renderIO(out, in);         // CHANNELS render
+	for (Channel* channel : channels)
+		channel->process(out, in);
+	//renderIO(out, in);         // CHANNELS render
 
 	/* Post processing. */
 	for (unsigned j=0; j<bufferSize; j++) {
@@ -518,6 +516,16 @@ bool isSilent()
 		if (ch->status == STATUS_PLAY)
 			return false;
 	return true;
+}
+
+
+
+/* -------------------------------------------------------------------------- */
+
+
+bool isChannelAudible(Channel* ch)
+{
+	return !hasSolos || (hasSolos && ch->solo);
 }
 
 

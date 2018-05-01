@@ -56,7 +56,6 @@ SampleChannel::SampleChannel(int bufferSize, bool inputMonitor)
 	: Channel          (G_CHANNEL_SAMPLE, STATUS_EMPTY, bufferSize),
 		rsmp_state       (nullptr),
 		pitch            (G_DEFAULT_PITCH),
-		boost            (G_DEFAULT_BOOST),
 		fadeoutTracker   (0),
 		wave             (nullptr),
 		tracker          (0),
@@ -70,6 +69,7 @@ SampleChannel::SampleChannel(int bufferSize, bool inputMonitor)
 		fadeoutOn        (false),
 		fadeoutVol       (1.0f),
 		fadeoutStep      (G_DEFAULT_FADEOUT_STEP),
+		boost            (G_DEFAULT_BOOST),
 		begin            (0),
 		end              (0),
 		frameRewind      (-1),
@@ -791,6 +791,8 @@ void SampleChannel::pushWave(Wave* w)
 
 void SampleChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in)
 {
+	audioProc::process(this, out, in);
+#if 0
 	assert(out.countSamples() == vChan.countSamples());
 	assert(in.countSamples()  == vChan.countSamples());
 
@@ -811,6 +813,7 @@ void SampleChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuf
 		for (int i=0; i<out.countFrames(); i++)
 			for (int j=0; j<out.countChannels(); j++)
 				out[i][j] += vChan[i][j] * volume * calcPanning(j) * boost;
+#endif
 }
 
 
@@ -819,33 +822,7 @@ void SampleChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuf
 
 void SampleChannel::preview(giada::m::AudioBuffer& out)
 {
-	if (previewMode == G_PREVIEW_NONE)
-		return;
 
-	vChanPreview.clear();
-
-	/* If the tracker exceedes the end point and preview is looped, split the 
-	rendering as in SampleChannel::reset(). */
-
-	if (trackerPreview + bufferSize >= end) {
-		int offset = end - trackerPreview;
-		trackerPreview = fillChan(vChanPreview, trackerPreview, 0, false);
-		trackerPreview = begin;
-		if (previewMode == G_PREVIEW_LOOP)
-			trackerPreview = fillChan(vChanPreview, begin, offset, false);
-		else
-		if (previewMode == G_PREVIEW_NORMAL) {
-			previewMode = G_PREVIEW_NONE;
-			if (onPreviewEnd)
-				onPreviewEnd();
-		}
-	}
-	else
-		trackerPreview = fillChan(vChanPreview, trackerPreview, 0, false);
-
-	for (int i=0; i<out.countFrames(); i++)
-		for (int j=0; j<out.countChannels(); j++)
-			out[i][j] += vChanPreview[i][j] * volume * calcPanning(j) * boost;
 }
 
 
@@ -936,72 +913,6 @@ bool SampleChannel::canInputRec()
 void SampleChannel::start(int frame, bool doQuantize, int quantize,
 		bool mixerIsRunning, bool forceStart, bool isUserGenerated)
 {
-	switch (status)	{
-		case STATUS_EMPTY:
-		case STATUS_MISSING:
-		case STATUS_WRONG:
-		{
-			return;
-		}
-		case STATUS_OFF:
-		{
-			if (mode & LOOP_ANY) {
-        if (forceStart) {
-          status = STATUS_PLAY;
-          tracker = frame;
-        }
-        else
-				    status = STATUS_WAIT;
-				sendMidiLplay();
-			}
-			else {
-				if (quantize > 0 && mixerIsRunning && doQuantize)
-					qWait = true;
-				else {
-					status = STATUS_PLAY;
-					sendMidiLplay();
-
-					/* Do fillChan only if this is not a user-generated event (i.e. is an
-					action read by Mixer). Otherwise clear() will take take of calling
-					fillChan on the next cycle. */
-
-					if (!isUserGenerated)
-						tracker = fillChan(vChan, tracker, frame);
-				}
-			}
-			break;
-		}
-		case STATUS_PLAY:
-		{
-			if (mode == SINGLE_BASIC)
-				setFadeOut(DO_STOP);
-			else
-			if (mode == SINGLE_RETRIG) {
-				if (quantize > 0 && mixerIsRunning && doQuantize)
-					qWait = true;
-				else
-					reset(frame);
-			}
-			else
-			if (mode & (LOOP_ANY | SINGLE_ENDLESS)) {
-				status = STATUS_ENDING;
-				sendMidiLplay();
-			}
-			break;
-		}
-		case STATUS_WAIT:
-		{
-			status = STATUS_OFF;
-			sendMidiLplay();
-			break;
-		}
-		case STATUS_ENDING:
-		{
-			status = STATUS_PLAY;
-			sendMidiLplay();
-			break;
-		}
-	}
 }
 
 

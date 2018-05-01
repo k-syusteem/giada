@@ -108,6 +108,8 @@ Is mixer silent? */
 
 bool isSilent();
 
+bool isChannelAudible(Channel* ch);
+
 /* rewind
 Rewinds sequencer to frame 0. */
 
