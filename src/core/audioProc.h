@@ -13,6 +13,7 @@ namespace giada {
 namespace m {
 namespace audioProc
 {
+void clearBuffers(SampleChannel* ch);
 void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart, 
 	bool isUserGenerated);
 void prepare(SampleChannel* ch, mixer::FrameEvents ev, size_t chanIndex);

@@ -51,13 +51,8 @@ private:
 	/* rsmp_state, rsmp_data
 	Structs from libsamplerate. */
 
-	SRC_STATE* rsmp_state;
-	SRC_DATA   rsmp_data;
-	
-	float pitch;
-
-
-	int fadeoutTracker;  // tracker fadeout, xfade only
+	//SRC_STATE* rsmp_state;
+	//SRC_DATA   rsmp_data;
 
 public:
 
@@ -167,6 +162,7 @@ public:
 	
 	Wave* wave;
 	int   tracker;         // chan position
+	int   fadeoutTracker;  // tracker fadeout, xfade only
 	int   trackerPreview;  // chan position for audio preview
 	int   shift;
 	int   mode;            // mode: see const.h
@@ -182,6 +178,8 @@ public:
   int		fadeoutEnd;      // what to do when fadeout ends
   
 	float boost;
+	
+	float pitch;
 
 	/* begin, end
 	Begin/end point to read wave data from/to. */

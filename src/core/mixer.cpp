@@ -263,6 +263,8 @@ content to the output buffer). Process plugins too, if any. */
 
 void renderIO(AudioBuffer& outBuf, const AudioBuffer& inBuf)
 {
+	for (Channel* channel : channels)
+		channel->process(outBuf, inBuf);
 /*
 	pthread_mutex_lock(&mutex_chans);
 	for (Channel* ch : channels) {
@@ -473,10 +475,8 @@ int masterPlay(void* outBuf, void* inBuf, unsigned bufferSize,
 			clock::sendMIDIsync();
 		}
 	}
-
-	for (Channel* channel : channels)
-		channel->process(out, in);
-	//renderIO(out, in);         // CHANNELS render
+	
+	renderIO(out, in);
 
 	/* Post processing. */
 	for (unsigned j=0; j<bufferSize; j++) {

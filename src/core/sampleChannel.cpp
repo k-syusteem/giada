@@ -54,11 +54,10 @@ using namespace giada::m;
 
 SampleChannel::SampleChannel(int bufferSize, bool inputMonitor)
 	: Channel          (G_CHANNEL_SAMPLE, STATUS_EMPTY, bufferSize),
-		rsmp_state       (nullptr),
-		pitch            (G_DEFAULT_PITCH),
-		fadeoutTracker   (0),
+		//rsmp_state       (nullptr),
 		wave             (nullptr),
 		tracker          (0),
+		fadeoutTracker   (0),
 		trackerPreview   (0),
 		shift            (0),
 		mode             (G_DEFAULT_CHANMODE),
@@ -70,6 +69,7 @@ SampleChannel::SampleChannel(int bufferSize, bool inputMonitor)
 		fadeoutVol       (1.0f),
 		fadeoutStep      (G_DEFAULT_FADEOUT_STEP),
 		boost            (G_DEFAULT_BOOST),
+		pitch            (G_DEFAULT_PITCH),
 		begin            (0),
 		end              (0),
 		frameRewind      (-1),
@@ -86,8 +86,8 @@ SampleChannel::~SampleChannel()
 {
 	if (wave != nullptr)
 		delete wave;
-	if (rsmp_state != nullptr)
-		src_delete(rsmp_state);
+	//if (rsmp_state != nullptr)
+	//	src_delete(rsmp_state);
 }
 
 
@@ -99,11 +99,11 @@ bool SampleChannel::allocBuffers()
 	if (!Channel::allocBuffers())
 		return false;
 
-	rsmp_state = src_new(SRC_LINEAR, G_MAX_IO_CHANS, nullptr);
-	if (rsmp_state == nullptr) {
-		gu_log("[SampleChannel::allocBuffers] unable to alloc memory for SRC_STATE!\n");
-		return false;
-	}
+	//rsmp_state = src_new(SRC_LINEAR, G_MAX_IO_CHANS, nullptr);
+	//if (rsmp_state == nullptr) {
+	//	gu_log("[SampleChannel::allocBuffers] unable to alloc memory for SRC_STATE!\n");
+	//	return false;
+	//}
 
 	if (!pChan.alloc(bufferSize, G_MAX_IO_CHANS)) {
 		gu_log("[SampleChannel::allocBuffers] unable to alloc memory for pChan!\n");
@@ -161,19 +161,7 @@ void SampleChannel::prepare(mixer::FrameEvents fe, size_t index)
 
 void SampleChannel::clear()
 {
-	/** TODO - these clear() may be done only if status PLAY | ENDING (if below),
-	 * but it would require extra clearPChan calls when samples stop */
-
-	vChan.clear();
-	pChan.clear();
-
-	if (status & (STATUS_PLAY | STATUS_ENDING)) {
-		tracker = fillChan(vChan, tracker, 0);
-		if (fadeoutOn && fadeoutType == XFADE) {
-			gu_log("[clear] filling pChan fadeoutTracker=%d\n", fadeoutTracker);
-			fadeoutTracker = fillChan(pChan, fadeoutTracker, 0);
-		}
-	}
+	audioProc::clearBuffers(this);
 }
 
 
@@ -306,13 +294,14 @@ void SampleChannel::setPitch(float v)
 		pitch = 0.1000f;
 	else 
 		pitch = v;
-
+#if 0
 	rsmp_data.src_ratio = 1/pitch;
 
 	/* if status is off don't slide between frequencies */
 
 	if (status & (STATUS_OFF | STATUS_WAIT))
 		src_set_ratio(rsmp_state, 1/pitch);
+#endif
 }
 
 
@@ -792,28 +781,6 @@ void SampleChannel::pushWave(Wave* w)
 void SampleChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in)
 {
 	audioProc::process(this, out, in);
-#if 0
-	assert(out.countSamples() == vChan.countSamples());
-	assert(in.countSamples()  == vChan.countSamples());
-
-	/* If armed and inbuffer is not nullptr (i.e. input device available) and
-  input monitor is on, copy input buffer to vChan: this enables the input
-  monitoring. The vChan will be overwritten later by pluginHost::processStack,
-  so that you would record "clean" audio (i.e. not plugin-processed). */
-
-	if (armed && in.isAllocd() && inputMonitor)
-		for (int i=0; i<vChan.countFrames(); i++)
-			for (int j=0; j<vChan.countChannels(); j++)
-				vChan[i][j] += in[i][j];   // add, don't overwrite
-
-#ifdef WITH_VST
-	pluginHost::processStack(vChan, pluginHost::CHANNEL, this);
-#endif
-
-		for (int i=0; i<out.countFrames(); i++)
-			for (int j=0; j<out.countChannels(); j++)
-				out[i][j] += vChan[i][j] * volume * calcPanning(j) * boost;
-#endif
 }
 
 
@@ -822,7 +789,6 @@ void SampleChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuf
 
 void SampleChannel::preview(giada::m::AudioBuffer& out)
 {
-
 }
 
 
@@ -931,6 +897,7 @@ void SampleChannel::writePatch(int i, bool isProject)
 
 int SampleChannel::fillChan(giada::m::AudioBuffer& dest, int start, int offset, bool rewind)
 {
+/*
 	rsmp_data.data_in       = wave->getFrame(start);    // source data
 	rsmp_data.input_frames  = end - start;              // how many readable frames
 	rsmp_data.data_out      = dest[offset];             // destination (processed data)
@@ -948,5 +915,6 @@ int SampleChannel::fillChan(giada::m::AudioBuffer& dest, int start, int offset, 
 		else
 			frameRewind = gen + offset;
 	}
-	return position;
+	return position;*/
+	return 0;
 }

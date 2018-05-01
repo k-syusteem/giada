@@ -16,7 +16,11 @@ namespace audioProc
 {
 namespace
 {
-SRC_STATE* rsmp_state;
+/* TODO - to be free'd!!!! 
+ TODO - to be free'd!!!! 
+TODO - to be free'd!!!! 
+ TODO - to be free'd!!!! */
+SRC_STATE* src_state = src_new(SRC_LINEAR, G_MAX_IO_CHANS, nullptr);
 
 
 /* -------------------------------------------------------------------------- */
@@ -28,12 +32,17 @@ int fillBuffer(SampleChannel* ch, giada::m::AudioBuffer& dest, int start,
 	SRC_DATA src_data;
 
 	src_data.data_in       = ch->wave->getFrame(start);   // source data
-	src_data.input_frames  = ch->getEnd() - start;        // how many readable frames
+	src_data.input_frames  = ch->end - start;             // how many readable frames
 	src_data.data_out      = dest[offset];                // destination (processed data)
 	src_data.output_frames = dest.countFrames() - offset; // how many frames to process
 	src_data.end_of_input  = false;
+	src_data.src_ratio     = 1 / ch->pitch;
 
-	src_process(rsmp_state, &src_data);
+	/*  TODO if status is off don't slide between frequencies */
+	//if (status & (STATUS_OFF | STATUS_WAIT))
+	//	src_set_ratio(rsmp_state, 1/pitch);
+
+	src_process(src_state, &src_data);
 
 	int position = start + src_data.input_frames_used; // position goes forward of frames_used (i.e. read from wave)
 
@@ -545,6 +554,26 @@ void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart,
 		}
 	}
 }
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void clearBuffers(SampleChannel* ch)
+{
+	/** TODO - these clear() may be done only if status PLAY | ENDING (if below),
+	 * but it would require extra clearPChan calls when samples stop */
+
+	ch->vChan.clear();
+	ch->pChan.clear();
+
+	if (ch->status & (STATUS_PLAY | STATUS_ENDING)) {
+		ch->tracker = fillBuffer(ch, ch->vChan, ch->tracker, 0);
+		if (ch->fadeoutOn && ch->fadeoutType == SampleChannel::XFADE)
+			ch->fadeoutTracker = fillBuffer(ch, ch->pChan, ch->fadeoutTracker, 0);
+	}	
+}
+
 
 
 /* -------------------------------------------------------------------------- */
