@@ -54,7 +54,7 @@ using namespace giada::m;
 
 SampleChannel::SampleChannel(int bufferSize, bool inputMonitor)
 	: Channel          (G_CHANNEL_SAMPLE, STATUS_EMPTY, bufferSize),
-		//rsmp_state       (nullptr),
+		rsmp_state       (nullptr),
 		wave             (nullptr),
 		tracker          (0),
 		fadeoutTracker   (0),
@@ -86,8 +86,8 @@ SampleChannel::~SampleChannel()
 {
 	if (wave != nullptr)
 		delete wave;
-	//if (rsmp_state != nullptr)
-	//	src_delete(rsmp_state);
+	if (rsmp_state != nullptr)
+		src_delete(rsmp_state);
 }
 
 
@@ -99,11 +99,11 @@ bool SampleChannel::allocBuffers()
 	if (!Channel::allocBuffers())
 		return false;
 
-	//rsmp_state = src_new(SRC_LINEAR, G_MAX_IO_CHANS, nullptr);
-	//if (rsmp_state == nullptr) {
-	//	gu_log("[SampleChannel::allocBuffers] unable to alloc memory for SRC_STATE!\n");
-	//	return false;
-	//}
+	rsmp_state = src_new(SRC_LINEAR, G_MAX_IO_CHANS, nullptr);
+	if (rsmp_state == nullptr) {
+		gu_log("[SampleChannel::allocBuffers] unable to alloc memory for SRC_STATE!\n");
+		return false;
+	}
 
 	if (!pChan.alloc(bufferSize, G_MAX_IO_CHANS)) {
 		gu_log("[SampleChannel::allocBuffers] unable to alloc memory for pChan!\n");
@@ -294,14 +294,11 @@ void SampleChannel::setPitch(float v)
 		pitch = 0.1000f;
 	else 
 		pitch = v;
-#if 0
-	rsmp_data.src_ratio = 1/pitch;
 
-	/* if status is off don't slide between frequencies */
-
-	if (status & (STATUS_OFF | STATUS_WAIT))
-		src_set_ratio(rsmp_state, 1/pitch);
-#endif
+// ???? 	/* if status is off don't slide between frequencies */
+// ???? 
+// ???? 	if (status & (STATUS_OFF | STATUS_WAIT))
+// ???? 		src_set_ratio(rsmp_state, 1/pitch);
 }
 
 
@@ -897,12 +894,12 @@ void SampleChannel::writePatch(int i, bool isProject)
 
 int SampleChannel::fillChan(giada::m::AudioBuffer& dest, int start, int offset, bool rewind)
 {
-/*
 	rsmp_data.data_in       = wave->getFrame(start);    // source data
 	rsmp_data.input_frames  = end - start;              // how many readable frames
 	rsmp_data.data_out      = dest[offset];             // destination (processed data)
 	rsmp_data.output_frames = bufferSize - offset;      // how many frames to process
 	rsmp_data.end_of_input  = false;
+	rsmp_data.src_ratio     = 1 / pitch;
 
 	src_process(rsmp_state, &rsmp_data);
 
@@ -915,6 +912,5 @@ int SampleChannel::fillChan(giada::m::AudioBuffer& dest, int start, int offset, 
 		else
 			frameRewind = gen + offset;
 	}
-	return position;*/
-	return 0;
+	return position;
 }

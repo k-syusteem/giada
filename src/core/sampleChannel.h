@@ -51,8 +51,8 @@ private:
 	/* rsmp_state, rsmp_data
 	Structs from libsamplerate. */
 
-	//SRC_STATE* rsmp_state;
-	//SRC_DATA   rsmp_data;
+	SRC_STATE* rsmp_state;
+	SRC_DATA   rsmp_data;
 
 public:
 

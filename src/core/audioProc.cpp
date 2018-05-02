@@ -29,6 +29,8 @@ SRC_STATE* src_state = src_new(SRC_LINEAR, G_MAX_IO_CHANS, nullptr);
 int fillBuffer(SampleChannel* ch, giada::m::AudioBuffer& dest, int start, 
 	int offset, bool rewind=true)
 {
+	return ch->fillChan(dest, start, offset, rewind);
+#if 0
 	SRC_DATA src_data;
 
 	src_data.data_in       = ch->wave->getFrame(start);   // source data
@@ -54,6 +56,7 @@ int fillBuffer(SampleChannel* ch, giada::m::AudioBuffer& dest, int start,
 			ch->frameRewind = gen + offset;
 	}
 	return position;
+#endif
 }
 
 
@@ -635,6 +638,8 @@ void process(SampleChannel* ch, m::AudioBuffer& out, const m::AudioBuffer& in)
 	/* preview */
 	/* preview */
 	/* preview */
+
+
 	if (ch->previewMode != G_PREVIEW_NONE) {
 		ch->vChanPreview.clear();
 
