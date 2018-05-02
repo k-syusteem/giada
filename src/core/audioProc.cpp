@@ -588,7 +588,8 @@ void parseEvents(SampleChannel* ch, mixer::FrameEvents fe, size_t chanIndex)
 		if (fe.onFirstBeat)
 			onFirstBeat(ch, fe.frameLocal);
 		for (const recorder::action* action : fe.actions)
-			parseAction(ch, action, fe.frameLocal, fe.frameGlobal);
+			if (action->chan == ch->index)
+				parseAction(ch, action, fe.frameLocal, fe.frameGlobal);
 	}
 	sum(ch, fe.frameLocal, fe.clockRunning);
 }
