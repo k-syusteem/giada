@@ -213,7 +213,7 @@ void keyRelease(SampleChannel* ch, bool ctrl, bool shift)
 	if (ctrl || shift)
 		return;
 
-	ch->stop();
+	audioProc::stop(ch);
 
 	/* record a key release only if channel is single_press. For any
 	 * other mode the KEY REL is meaningless. */

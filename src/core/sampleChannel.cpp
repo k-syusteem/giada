@@ -165,74 +165,51 @@ void SampleChannel::fillBuffer()
 }
 
 
+
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::calcVolumeEnv(int frame)
+void SampleChannel::rewind()
 {
-	/* method: check this frame && next frame, then calculate delta */
-
-	recorder::action* a0 = nullptr;
-	recorder::action* a1 = nullptr;
-	int res;
-
-	/* get this action on frame 'frame'. It's unlikely that the action
-	 * is not found. */
-
-	res = recorder::getAction(index, G_ACTION_VOLUME, frame, &a0);
-	if (res == 0)
-		return;
-
-	/* get the action next to this one.
-	 * res == -1: a1 not found, this is the last one. Rewind the search
-	 * and use action at frame number 0 (actions[0]).
-	 * res == -2 G_ACTION_VOLUME not found. This should never happen */
-
-	res = recorder::getNextAction(index, G_ACTION_VOLUME, frame, &a1);
-
-	if (res == -1)
-		res = recorder::getAction(index, G_ACTION_VOLUME, 0, &a1);
-
-	volume_i = a0->fValue;
-	volume_d = ((a1->fValue - a0->fValue) / (a1->frame - a0->frame)) * 1.003f;
+	audioProc::rewind(this);
 }
 
 
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::hardStop(int frame)
+void SampleChannel::stopBySeq(bool chansStopOnSeqHalt)
 {
-	if (frame != 0)        
-		vChan.clear(frame); // clear data in range [frame, [end]]
-	status = STATUS_OFF;
-	sendMidiLplay();
-	reset(frame);
+	audioProc::stopBySeq(this, chansStopOnSeqHalt);
 }
 
 
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::onBar(int frame)
+void SampleChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in)
 {
-	///if (mode == LOOP_REPEAT && status == STATUS_PLAY)
-	///	//setXFade(frame * 2);
-	///	reset(frame * 2);
+	audioProc::process(this, out, in);
+}
 
-	if (mode == LOOP_REPEAT) {
-		if (status == STATUS_PLAY)
-			//setXFade(frame * 2);
-			reset(frame);
-	}
-	else
-	if (mode == LOOP_ONCE_BAR) {
-		if (status == STATUS_WAIT) {
-			status  = STATUS_PLAY;
-			tracker = fillChan(vChan, tracker, frame);
-			sendMidiLplay();
-		}
-	}
+
+/* -------------------------------------------------------------------------- */
+
+
+void SampleChannel::readPatch(const string& basePath, int i)
+{
+	Channel::readPatch("", i);
+	channelManager::readPatch(this, basePath, i);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void SampleChannel::writePatch(int i, bool isProject)
+{
+	Channel::writePatch(i, isProject);
+	channelManager::writePatch(this, isProject, i);
 }
 
 
@@ -308,327 +285,12 @@ float SampleChannel::getPitch() const { return pitch; }
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::rewind()
-{
-	/* rewind LOOP_ANY or SINGLE_ANY only if it's in read-record-mode */
-
-	if (wave != nullptr) {
-		if ((mode & LOOP_ANY) || (recStatus == REC_READING && (mode & SINGLE_ANY)))
-			reset(0);  // rewind is user-generated events, always on frame 0
-	}
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::parseAction(recorder::action* a, int localFrame,
-		int globalFrame, int quantize, bool mixerIsRunning)
-{
-	if (readActions == false)
-		return;
-
-	switch (a->type) {
-		case G_ACTION_KEYPRESS:
-			if (mode & SINGLE_ANY)
-				start(localFrame, false, quantize, mixerIsRunning, false, false);
-			break;
-		case G_ACTION_KEYREL:
-			if (mode & SINGLE_ANY)
-				stop();
-			break;
-		case G_ACTION_KILL:
-			if (mode & SINGLE_ANY)
-				kill(localFrame);
-			break;
-		case G_ACTION_MUTEON:
-			setMute(true);   // internal mute
-			break;
-		case G_ACTION_MUTEOFF:
-			unsetMute(true); // internal mute
-			break;
-		case G_ACTION_VOLUME:
-			calcVolumeEnv(globalFrame);
-			break;
-	}
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::sum(int frame, bool running)
-{
-	if (wave == nullptr || status & ~(STATUS_PLAY | STATUS_ENDING))
-		return;
-
-	if (frame != frameRewind) {
-
-		/* volume envelope, only if seq is running */
-
-		if (running) {
-			volume_i += volume_d;
-			if (volume_i < 0.0f)
-				volume_i = 0.0f;
-			else
-			if (volume_i > 1.0f)
-				volume_i = 1.0f;
-		}
-
-		/* fadein or fadeout processes. If mute, delete any signal. */
-
-		/** TODO - big issue: fade[in/out]Vol * internal_volume might be a
-		 * bad choice: it causes glitches when muting on and off during a
-		 * volume envelope. */
-
-		if (mute || mute_i) {
-			for (int i=0; i<vChan.countChannels(); i++)
-				vChan[frame][i] = 0.0f;
-		}
-		else
-		if (fadeinOn) {
-			if (fadeinVol < 1.0f) {
-				for (int i=0; i<vChan.countChannels(); i++)
-					vChan[frame][i] *= fadeinVol * volume_i;
-				fadeinVol += 0.01f;
-			}
-			else {
-				fadeinOn  = false;
-				fadeinVol = 0.0f;
-			}
-		}
-		else
-		if (fadeoutOn) {
-			if (fadeoutVol > 0.0f) { // fadeout ongoing
-				if (fadeoutType == XFADE) {
-					for (int i=0; i<vChan.countChannels(); i++)
-						vChan[frame][i] = pChan[frame][i] * fadeoutVol * volume_i;
-				}
-				else {
-					for (int i=0; i<vChan.countChannels(); i++)
-						vChan[frame][i] *= fadeoutVol * volume_i;
-				}
-				fadeoutVol -= fadeoutStep;
-			}
-			else {  // fadeout end
-				fadeoutOn  = false;
-				fadeoutVol = 1.0f;
-
-				/* QWait ends with the end of the xfade */
-
-				if (fadeoutType == XFADE) {
-					qWait = false;
-				}
-				else {
-					if (fadeoutEnd == DO_MUTE)
-						mute = true;
-					else
-					if (fadeoutEnd == DO_MUTE_I)
-						mute_i = true;
-					else             // DO_STOP
-						hardStop(frame);
-				}
-			}
-		}
-		else {
-			for (int i=0; i<vChan.countChannels(); i++)
-				vChan[frame][i] *= volume_i;
-		}
-	}
-	else { // at this point the sample has reached the end */
-
-		if (mode & (SINGLE_BASIC | SINGLE_PRESS | SINGLE_RETRIG) ||
-			 (mode == SINGLE_ENDLESS && status == STATUS_ENDING)   ||
-			 (mode & LOOP_ANY && !running))     // stop loops when the seq is off
-		{
-			status = STATUS_OFF;
-			sendMidiLplay();
-		}
-
-		/* LOOP_ONCE or LOOP_ONCE_BAR: if ending (i.e. the user requested their
-		 * termination), kill 'em. Let them wait otherwise. But don't put back in
-		 * wait mode those already stopped by the conditionals above. */
-
-		if (mode & (LOOP_ONCE | LOOP_ONCE_BAR)) {
-			if (status == STATUS_ENDING)
-				status = STATUS_OFF;
-			else
-			if (status != STATUS_OFF)
-				status = STATUS_WAIT;
-		}
-
-		/* Check for end of samples. SINGLE_ENDLESS runs forever unless it's in 
-		ENDING mode. */
-
-		reset(frame);
-	}
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::onZero(int frame, bool recsStopOnChanHalt)
-{
-	if (wave == nullptr)
-		return;
-
-	if (mode & LOOP_ANY) {
-
-		/* do a crossfade if the sample is playing. Regular chanReset
-		 * instead if it's muted, otherwise a click occurs */
-
-		if (status == STATUS_PLAY) {
-			/*
-			if (mute || mute_i)
-				reset(frame * 2);
-			else
-				setXFade(frame * 2);
-			*/
-			reset(frame);
-		}
-		else
-		if (status == STATUS_ENDING)
-			hardStop(frame);
-	}
-
-	if (status == STATUS_WAIT) { /// FIXME - should be inside previous if!
-		status  = STATUS_PLAY;
-		sendMidiLplay();
-		tracker = fillChan(vChan, tracker, frame);
-	}
-
-	if (recStatus == REC_ENDING) {
-		recStatus = REC_STOPPED;
-		setReadActions(false, recsStopOnChanHalt);  // rec stop
-	}
-	else
-	if (recStatus == REC_WAITING) {
-		recStatus = REC_READING;
-		setReadActions(true, recsStopOnChanHalt);   // rec start
-	}
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::quantize(int index, int localFrame, int globalFrame)
-{
-	/* skip if LOOP_ANY or not in quantizer-wait mode */
-
-	if ((mode & LOOP_ANY) || !qWait)
-		return;
-
-	/* no fadeout if the sample starts for the first time (from a
-	 * STATUS_OFF), it would be meaningless. */
-
-	if (status == STATUS_OFF) {
-		status  = STATUS_PLAY;
-		sendMidiLplay();
-		qWait   = false;
-		tracker = fillChan(vChan, tracker, localFrame); /// FIXME: ???
-	}
-	else
-		//setXFade(localFrame * 2);
-		reset(localFrame);
-
-	/* this is the moment in which we record the keypress, if the
-	 * quantizer is on. SINGLE_PRESS needs overdub */
-
-	if (recorder::canRec(this, clock::isRunning(), mixer::recording)) {
-		if (mode == SINGLE_PRESS) {
-			recorder::startOverdub(index, G_ACTION_KEYS, globalFrame, 
-				kernelAudio::getRealBufSize());
-      readActions = false;   // don't read actions while overdubbing
-    }
-		else
-			recorder::rec(index, G_ACTION_KEYPRESS, globalFrame);
-    hasActions = true;
-	}
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 int SampleChannel::getPosition()
 {
 	if (status & ~(STATUS_EMPTY | STATUS_MISSING | STATUS_OFF)) // if is not (...)
 		return tracker - begin;
 	else
 		return -1;
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::setMute(bool internal)
-{
-	if (internal) {
-
-		/* global mute is on? don't waste time with fadeout, just mute it
-		 * internally */
-
-		if (mute)
-			mute_i = true;
-		else {
-			if (isPlaying())
-				setFadeOut(DO_MUTE_I);
-			else
-				mute_i = true;
-		}
-	}
-	else {
-
-		/* internal mute is on? don't waste time with fadeout, just mute it
-		 * globally */
-
-		if (mute_i)
-			mute = true;
-		else {
-
-			/* sample in play? fadeout needed. Else, just mute it globally */
-
-			if (isPlaying())
-				setFadeOut(DO_MUTE);
-			else
-				mute = true;
-		}
-	}
-
-	sendMidiLmute();
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::unsetMute(bool internal)
-{
-	if (internal) {
-		if (mute)
-			mute_i = false;
-		else {
-			if (isPlaying())
-				setFadeIn(internal);
-			else
-				mute_i = false;
-		}
-	}
-	else {
-		if (mute_i)
-			mute = false;
-		else {
-			if (isPlaying())
-				setFadeIn(internal);
-			else
-				mute = false;
-		}
-	}
-
-	sendMidiLmute();
 }
 
 
@@ -662,17 +324,6 @@ void SampleChannel::calcFadeoutStep()
 		fadeoutStep = ceil((end - tracker) / volume); /// or volume_i ???
 	else
 		fadeoutStep = G_DEFAULT_FADEOUT_STEP;
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::setReadActions(bool v, bool killOnFalse)
-{
-	readActions = v;
-	if (!readActions && killOnFalse)
-		kill(0);  /// FIXME - wrong frame value
 }
 
 
@@ -720,27 +371,6 @@ void SampleChannel::setXFade(int frame)
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::reset(int frame)
-{
-	//fadeoutTracker = tracker;   // store old frame number for xfade
-	tracker = begin;
-	mute_i  = false;
-	qWait   = false;  // Was in qWait mode? Reset occured, no more qWait now.
-
-	/* On reset, if frame > 0 and in play, fill again pChan to create something 
-	like this:
-
-		|abcdefabcdefab*abcdefabcde|
-		[old data-----]*[new data--] */
-
-	if (frame > 0 && status & (STATUS_PLAY | STATUS_ENDING))
-		tracker = fillChan(vChan, tracker, frame);
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 void SampleChannel::empty()
 {
 	status = STATUS_OFF;
@@ -775,117 +405,9 @@ void SampleChannel::pushWave(Wave* w)
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in)
-{
-	audioProc::process(this, out, in);
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::preview(giada::m::AudioBuffer& out)
-{
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::kill(int frame)
-{
-	if (wave != nullptr && status != STATUS_OFF) {
-		if (mute || mute_i || (status == STATUS_WAIT && mode & LOOP_ANY))
-			hardStop(frame);
-		else
-			setFadeOut(DO_STOP);
-	}
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::stopBySeq(bool chansStopOnSeqHalt)
-{
-  /* Loop-mode samples in wait status get stopped right away. */
-
-	if (mode & LOOP_ANY && status == STATUS_WAIT) {
-		status = STATUS_OFF;
-    return;
-  }
-
-  /* When to kill samples on StopSeq:
-   *  - when chansStopOnSeqHalt == true (run the sample to end otherwise)
-   *  - when a channel has recs in play (1)
-   *
-   * Always kill at frame=0, this is a user-generated event.
-   *
-   * (1) a channel has recs in play when:
-   *  - Recorder has events for that channel
-   *  - G_Mixer has at least one sample in play
-   *  - Recorder's channel is active (altrimenti può capitare che si stoppino i
-   *    sample suonati manualmente in un canale con rec disattivate) */
-
-	if (chansStopOnSeqHalt) {
-    if ((mode & LOOP_ANY) || (hasActions && readActions && status == STATUS_PLAY))
-      kill(0);
-  }
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::stop()
-{
-	if (mode == SINGLE_PRESS && status == STATUS_PLAY) {
-		if (mute || mute_i)
-			hardStop(0);  /// FIXME - wrong frame value
-		else
-			setFadeOut(DO_STOP);
-	}
-	else  // stop a SINGLE_PRESS immediately, if the quantizer is on
-	if (mode == SINGLE_PRESS && qWait == true)
-		qWait = false;
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::readPatch(const string& basePath, int i)
-{
-	Channel::readPatch("", i);
-	channelManager::readPatch(this, basePath, i);
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 bool SampleChannel::canInputRec()
 {
 	return wave == nullptr && armed;
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::start(int frame, bool doQuantize, int quantize,
-		bool mixerIsRunning, bool forceStart, bool isUserGenerated)
-{
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::writePatch(int i, bool isProject)
-{
-	Channel::writePatch(i, isProject);
-	channelManager::writePatch(this, isProject, i);
 }
 
 
@@ -913,4 +435,44 @@ int SampleChannel::fillChan(giada::m::AudioBuffer& dest, int start, int offset, 
 			frameRewind = gen + offset;
 	}
 	return position;
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void SampleChannel::parseAction(recorder::action* a, int localFrame,
+		int globalFrame, int quantize, bool mixerIsRunning)
+{
+}
+void SampleChannel::onZero(int frame, bool recsStopOnChanHalt)
+{
+}
+void SampleChannel::quantize(int index, int localFrame, int globalFrame)
+{
+}
+void SampleChannel::setMute(bool internal)
+{
+}
+void SampleChannel::unsetMute(bool internal)
+{
+}
+void SampleChannel::reset(int frame) // audioProc::rewind
+{
+}
+void SampleChannel::preview(giada::m::AudioBuffer& out)
+{
+}
+void SampleChannel::start(int frame, bool doQuantize, int quantize,
+		bool mixerIsRunning, bool forceStart, bool isUserGenerated)
+{
+}
+void SampleChannel::onBar(int frame)
+{
+}
+void SampleChannel::kill(int frame)
+{
+}
+void SampleChannel::stop()
+{
 }

@@ -45,6 +45,8 @@ void rewind(SampleChannel* ch, int localFrame)
 
 /* -------------------------------------------------------------------------- */
 
+/* hardStop
+Stops the channel immediately, no further checks. */
 
 void hardStop(SampleChannel* ch, int localFrame)
 {
@@ -53,37 +55,6 @@ void hardStop(SampleChannel* ch, int localFrame)
 	ch->status = STATUS_OFF;
 	ch->sendMidiLplay();/* MIDI TODO ********** */
 	rewind(ch, localFrame);
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void kill(SampleChannel* ch, int localFrame)
-{
-	if (ch->wave != nullptr && ch->status != STATUS_OFF) {
-		if (ch->mute || ch->mute_i || (ch->status == STATUS_WAIT && ch->mode & LOOP_ANY))
-			hardStop(ch, localFrame);
-		else
-			ch->setFadeOut(SampleChannel::DO_STOP);
-	}
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void stop(SampleChannel* ch)
-{
-	if (ch->mode == SINGLE_PRESS && ch->status == STATUS_PLAY) {
-		if (ch->mute || ch->mute_i)
-			hardStop(ch, 0);  /// FIXME - wrong frame value
-		else
-			ch->setFadeOut(SampleChannel::DO_STOP);
-	}
-	else  // stop a SINGLE_PRESS immediately, if the quantizer is on
-	if (ch->mode == SINGLE_PRESS && ch->qWait == true)
-		ch->qWait = false;
 }
 
 
@@ -148,17 +119,6 @@ void onBar(SampleChannel* ch, int localFrame)
 /* -------------------------------------------------------------------------- */
 
 
-void setReadActions(SampleChannel* ch, bool v)
-{
-	ch->readActions = v;
-	if (!ch->readActions && conf::recsStopOnChanHalt)
-		kill(ch, 0); // FIXME - wrong frame value
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 void onFirstBeat(SampleChannel* ch, int localFrame)
 {
 	if (ch->wave == nullptr)
@@ -184,12 +144,12 @@ void onFirstBeat(SampleChannel* ch, int localFrame)
 
 	if (ch->recStatus == REC_ENDING) {
 		ch->recStatus = REC_STOPPED;
-		setReadActions(ch, false);  // rec stop
+		setReadActions(ch, false, conf::recsStopOnChanHalt);  // rec stop
 	}
 	else
 	if (ch->recStatus == REC_WAITING) {
 		ch->recStatus = REC_READING;
-		setReadActions(ch, true);   // rec start
+		setReadActions(ch, true, conf::recsStopOnChanHalt);   // rec start
 	}	
 }
 
@@ -267,6 +227,8 @@ void unsetMute(SampleChannel* ch, bool internal)
 
 /* -------------------------------------------------------------------------- */
 
+/* calcVolumeEnv
+Computes any changes in volume done via envelope tool. */
 
 void calcVolumeEnv(SampleChannel* ch, int globalFrame)
 {
@@ -447,6 +409,94 @@ void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+
+void setReadActions(SampleChannel* ch, bool v, bool recsStopOnChanHalt)
+{
+	ch->readActions = v;
+	if (!ch->readActions && recsStopOnChanHalt)
+		kill(ch, 0); // FIXME - wrong frame value
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void kill(SampleChannel* ch, int localFrame)
+{
+	if (ch->wave != nullptr && ch->status != STATUS_OFF) {
+		if (ch->mute || ch->mute_i || (ch->status == STATUS_WAIT && ch->mode & LOOP_ANY))
+			hardStop(ch, localFrame);
+		else
+			ch->setFadeOut(SampleChannel::DO_STOP);
+	}
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void stop(SampleChannel* ch)
+{
+	if (ch->mode == SINGLE_PRESS && ch->status == STATUS_PLAY) {
+		if (ch->mute || ch->mute_i)
+			hardStop(ch, 0);  /// FIXME - wrong frame value
+		else
+			ch->setFadeOut(SampleChannel::DO_STOP);
+	}
+	else  // stop a SINGLE_PRESS immediately, if the quantizer is on
+	if (ch->mode == SINGLE_PRESS && ch->qWait == true)
+		ch->qWait = false;
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void stopBySeq(SampleChannel* ch, bool chansStopOnSeqHalt)
+{
+	/* Loop-mode samples in wait status get stopped right away. */
+
+	if (ch->mode & LOOP_ANY && ch->status == STATUS_WAIT) {
+		ch->status = STATUS_OFF;
+		return;
+	}
+
+	/* When to kill samples on StopSeq:
+	 *  - when chansStopOnSeqHalt == true (run the sample to end otherwise)
+	 *  - when a channel has recs in play (1)
+	 *
+	 * Always kill at frame=0, this is a user-generated event.
+	 *
+	 * (1) a channel has recs in play when:
+	 *  - Recorder has events for that channel
+	 *  - G_Mixer has at least one sample in play
+	 *  - Recorder's channel is active (altrimenti può capitare che si stoppino i
+	 *    sample suonati manualmente in un canale con rec disattivate) */
+
+	if (chansStopOnSeqHalt) {
+		if ((ch->mode & LOOP_ANY) || (ch->hasActions && ch->readActions && ch->status == STATUS_PLAY))
+			kill(ch, 0);
+	}	
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void rewind(SampleChannel* ch)
+{
+	/* rewind LOOP_ANY or SINGLE_ANY only if it's in read-record-mode */
+
+	if (ch->wave != nullptr) {
+		if ((ch->mode & LOOP_ANY) || (ch->recStatus == REC_READING && (ch->mode & SINGLE_ANY)))
+			rewind(ch, 0);  // rewind is user-generated events, always on frame 0
+	}	
+}
+
+
+/* -------------------------------------------------------------------------- */
 
 
 /* TODO join doQuantize, forceStart into one parameter */
@@ -575,9 +625,9 @@ void process(SampleChannel* ch, m::AudioBuffer& out, const m::AudioBuffer& in)
 		assert(in.countSamples()  == ch->vChan.countSamples());
 
 		/* If armed and inbuffer is not nullptr (i.e. input device available) and
-	  input monitor is on, copy input buffer to vChan: this enables the input
-	  monitoring. The vChan will be overwritten later by pluginHost::processStack,
-	  so that you would record "clean" audio (i.e. not plugin-processed). */
+		input monitor is on, copy input buffer to vChan: this enables the input
+		monitoring. The vChan will be overwritten later by pluginHost::processStack,
+		so that you would record "clean" audio (i.e. not plugin-processed). */
 
 		if (ch->armed && in.isAllocd() && ch->inputMonitor)
 			for (int i=0; i<ch->vChan.countFrames(); i++)

@@ -46,6 +46,7 @@
 #include "../utils/gui.h"
 #include "../utils/fs.h"
 #include "../utils/log.h"
+#include "../core/audioProc.h"
 #include "../core/kernelAudio.h"
 #include "../core/mixerHandler.h"
 #include "../core/mixer.h"
@@ -80,7 +81,7 @@ int loadChannel(SampleChannel* ch, const string& fname)
 	issues if tracker is outside the boundaries of the new sample -> segfault. */
 
 	if (ch->status & (STATUS_PLAY | STATUS_ENDING))
-		ch->hardStop(0);
+		audioProc::kill(ch, 0);
 
 	/* Save the patch and take the last browser's dir in order to re-use it the 
 	next time. */
@@ -378,7 +379,7 @@ void startReadingRecs(SampleChannel* ch, bool gui)
 	if (conf::treatRecsAsLoops)
 		ch->recStatus = REC_WAITING;
 	else
-		ch->setReadActions(true, conf::recsStopOnChanHalt);
+		audioProc::setReadActions(ch, true, conf::recsStopOnChanHalt);
 	if (!gui) {
 		Fl::lock();
 		static_cast<geSampleChannel*>(ch->guiChannel)->readActions->value(1);
@@ -400,7 +401,7 @@ void stopReadingRecs(SampleChannel* ch, bool gui)
 
 	if (!clock::isRunning()) {
 		ch->recStatus = REC_STOPPED;
-		ch->setReadActions(false, false);
+		audioProc::setReadActions(ch, false, false);
 	}
 	else
 	if (ch->recStatus == REC_WAITING)
@@ -412,7 +413,7 @@ void stopReadingRecs(SampleChannel* ch, bool gui)
 	if (conf::treatRecsAsLoops)
 		ch->recStatus = REC_ENDING;
 	else
-		ch->setReadActions(false, conf::recsStopOnChanHalt);
+		audioProc::setReadActions(ch, false, conf::recsStopOnChanHalt);
 
 	if (!gui) {
 		Fl::lock();

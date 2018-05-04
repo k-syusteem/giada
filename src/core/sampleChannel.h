@@ -110,32 +110,10 @@ public:
 
 	int getPosition();
 
-	/* sum
-	Adds sample frames to virtual channel. Frame = processed frame in Mixer. 
-	Running == is Mixer in play? */
-
-	void sum(int frame, bool running);
-
 	void setPitch(float v);
 	void setBegin(int f);
 	void setEnd(int f);
 	void setBoost(float v);
-
-	/* hardStop
-	Stops the channel immediately, no further checks. */
-
-	void hardStop(int frame);
-
-	/* setReadActions
-	If enabled (v == true), recorder will read actions from this channel. If 
-	killOnFalse == true and disabled, will also kill the channel. */
-
-	void setReadActions(bool v, bool killOnFalse);
-
-	/* calcVolumeEnv
-	Computes any changes in volume done via envelope tool. */
-
-	void calcVolumeEnv(int frame);
 
 	/* fade methods
 	Prepare channel for fade, mixer will take care of the process during master 
