@@ -102,7 +102,7 @@ public:
 	/* stop
 	What to do when channel is stopped normally (via key or MIDI). */
 
-	virtual void stop() = 0;
+	virtual void stop(bool isUserGenerated) = 0;
 
 	/* kill
 	What to do when channel stops abruptly. */

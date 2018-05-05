@@ -38,7 +38,7 @@ void kill(SampleChannel* ch, int localFrame);
 /* stop
 Stops a channel normally (via key or MIDI). */
 
-void stop(SampleChannel* ch);
+void stop(SampleChannel* ch, bool isUserGenerated);
 
 /* stopBySeq
 Stops a channel when the stop button on main transport is pressed. */

@@ -181,7 +181,7 @@ void MidiChannel::addVstMidiEvent(uint32_t msg, int localFrame)
 /* -------------------------------------------------------------------------- */
 
 
-void MidiChannel::stop() {}
+void MidiChannel::stop(bool isUserGenerated) {}
 void MidiChannel::empty() {}
 
 

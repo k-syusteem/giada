@@ -55,7 +55,7 @@ public:
 	void kill(int localFrame) override;
 	void empty() override;
 	void stopBySeq(bool chansStopOnSeqHalt) override;
-	void stop() override;
+	void stop(bool isUserGenerated) override;
 	void rewind() override;
 	void setMute(bool internal) override;
 	void unsetMute(bool internal) override;

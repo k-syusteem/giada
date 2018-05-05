@@ -188,9 +188,9 @@ void SampleChannel::start(int localFrame, bool doQuantize, int quantize,
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::stop()
+void SampleChannel::stop(bool isUserGenerated)
 {
-	audioProc::stop(this);
+	audioProc::stop(this, isUserGenerated);
 }
 
 

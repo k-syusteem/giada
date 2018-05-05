@@ -169,8 +169,8 @@ void keyPress(Channel* ch, bool ctrl, bool shift, int velocity)
 
 void keyRelease(Channel* ch, bool ctrl, bool shift)
 {
-	if (ch->type == G_CHANNEL_SAMPLE)
-		keyRelease(static_cast<SampleChannel*>(ch), ctrl, shift);
+	if (!ctrl && !shift)
+		ch->stop(true); // User-generated event
 }
 
 
@@ -200,30 +200,6 @@ void keyPress(SampleChannel* ch, bool ctrl, bool shift, int velocity)
 		shiftPress(ch);
 	else
 		cleanPress(ch, velocity);
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void keyRelease(SampleChannel* ch, bool ctrl, bool shift)
-{
-	using namespace giada::m;
-
-	if (ctrl || shift)
-		return;
-
-	ch->stop();
-
-	/* record a key release only if channel is single_press. For any
-	 * other mode the KEY REL is meaningless. */
-
-	if (ch->mode == SINGLE_PRESS && recorder::canRec(ch, clock::isRunning(), mixer::recording))
-		recorder::stopOverdub(clock::getCurrentFrame(), clock::getFramesInLoop(),
-			&mixer::mutex);
-
-	/* the GUI update is done by gui_refresh() */
-
 }
 
 

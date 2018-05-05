@@ -379,7 +379,7 @@ void kill(SampleChannel* ch, int localFrame)
 /* -------------------------------------------------------------------------- */
 
 
-void stop(SampleChannel* ch)
+void stop(SampleChannel* ch, bool isUserGenerated)
 {
 	if (ch->mode == SINGLE_PRESS && ch->status == STATUS_PLAY) {
 		if (ch->mute || ch->mute_i)
@@ -390,6 +390,14 @@ void stop(SampleChannel* ch)
 	else  // stop a SINGLE_PRESS immediately, if the quantizer is on
 	if (ch->mode == SINGLE_PRESS && ch->qWait == true)
 		ch->qWait = false;
+
+	if (isUserGenerated) {
+		/* record a key release only if channel is single_press. For any
+		 * other mode the KEY REL is meaningless. */
+		if (ch->mode == SINGLE_PRESS && recorder::canRec(ch, clock::isRunning(), mixer::recording))
+			recorder::stopOverdub(clock::getCurrentFrame(), clock::getFramesInLoop(),
+				&mixer::mutex);
+	}
 }
 
 
