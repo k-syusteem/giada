@@ -34,6 +34,7 @@ void setReadActions(SampleChannel* ch, bool v, bool recsStopOnChanHalt);
 Stops a channel abruptly. */
 
 void kill(SampleChannel* ch, int localFrame);
+void manualKill(SampleChannel* ch);
 
 /* stop
 Stops a channel normally (via key or MIDI). */

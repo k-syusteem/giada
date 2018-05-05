@@ -59,54 +59,15 @@ namespace giada {
 namespace c     {
 namespace io 
 {
-namespace
-{
-void shiftPress(SampleChannel* ch)
-{
-	/* action recording on:
-			if sequencer is running, rec a killchan
-		 action recording off:
-			if chan has recorded events:
-			|	 if seq is playing OR channel 'c' is stopped, de/activate recs
-			|	 else kill chan
-			else kill chan. */
-
-	if (m::recorder::active) {
-		if (!m::clock::isRunning()) 
-			return;
-		ch->kill(0); // on frame 0: user-generated event
-		if (m::recorder::canRec(ch, m::clock::isRunning(), m::mixer::recording) &&
-				!(ch->mode & LOOP_ANY))
-		{   // don't record killChan actions for LOOP channels
-			m::recorder::rec(ch->index, G_ACTION_KILL, m::clock::getCurrentFrame());
-			ch->hasActions = true;
-		}
-	}
-	else {
-		if (ch->hasActions) {
-			if (m::clock::isRunning() || ch->status == STATUS_OFF)
-				ch->readActions ? c::channel::stopReadingRecs(ch) : c::channel::startReadingRecs(ch);
-			else
-				ch->kill(0);  // on frame 0: user-generated event
-		}
-		else
-			ch->kill(0);    // on frame 0: user-generated event
-	}
-}
-} // {anonymous}
-
-
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-
-
 void keyPress(Channel* ch, bool ctrl, bool shift, int velocity)
 {
-	if (ch->type == G_CHANNEL_SAMPLE)
-		keyPress(static_cast<SampleChannel*>(ch), ctrl, shift, velocity);
+	if (ctrl)
+		c::channel::toggleMute(ch);
 	else
-		keyPress(static_cast<MidiChannel*>(ch), ctrl, shift);
+	if (shift)
+		ch->manualKill();
+	else
+		ch->start(0, true, m::clock::getQuantize(), m::clock::isRunning(), false, true, true, -1); // on frame 0: user-generated event
 }
 
 
@@ -117,35 +78,6 @@ void keyRelease(Channel* ch, bool ctrl, bool shift)
 {
 	if (!ctrl && !shift)
 		ch->stop(true); // User-generated event
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void keyPress(MidiChannel* ch, bool ctrl, bool shift)
-{
-	if (ctrl)
-		c::channel::toggleMute(ch);
-	else
-	if (shift)
-		ch->kill(0);        // on frame 0: user-generated event
-	else
-		ch->start(0, true, m::clock::getQuantize(), m::clock::isRunning(), false, true, true, -1); // on frame 0: user-generated event
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void keyPress(SampleChannel* ch, bool ctrl, bool shift, int velocity)
-{
-	if (ctrl)
-		c::channel::toggleMute(ch);
-	else if (shift)
-		shiftPress(ch);
-	else
-		ch->start(0, true, m::clock::getQuantize(), m::clock::isRunning(), false, true, true, velocity); // on frame 0: user-generated event
 }
 
 

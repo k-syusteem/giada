@@ -80,7 +80,7 @@ int loadChannel(SampleChannel* ch, const string& fname)
 	/* Always stop a channel before loading a new sample in it. This will prevent
 	issues if tracker is outside the boundaries of the new sample -> segfault. */
 
-	if (ch->status & (STATUS_PLAY | STATUS_ENDING))
+	if (ch->isPlaying())
 		ch->kill(0);
 
 	/* Save the patch and take the last browser's dir in order to re-use it the 
@@ -150,7 +150,7 @@ void deleteChannel(Channel* ch)
 
 void freeChannel(Channel* ch)
 {
-	if (ch->status == STATUS_PLAY) {
+	if (ch->isPlaying()) {
 		if (!gdConfirmWin("Warning", "This action will stop the channel: are you sure?"))
 			return;
 	}

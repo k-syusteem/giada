@@ -109,6 +109,7 @@ public:
 	What to do when channel stops abruptly. */
 
 	virtual void kill(int localFrame) = 0;
+	virtual void manualKill() = 0;
 
 	/* mute
 	What to do when channel is muted. If internal == true, set internal mute 

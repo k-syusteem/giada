@@ -217,7 +217,7 @@ void geMidiChannel::cb_button()
 	using namespace giada;
 	
 	if (button->value())
-		c::io::keyPress(static_cast<MidiChannel*>(ch), Fl::event_ctrl(), Fl::event_shift());
+		c::io::keyPress(static_cast<MidiChannel*>(ch), Fl::event_ctrl(), Fl::event_shift(), 0);
 }
 
 

@@ -217,6 +217,15 @@ void SampleChannel::kill(int localFrame)
 /* -------------------------------------------------------------------------- */
 
 
+void SampleChannel::manualKill()
+{
+	audioProc::manualKill(this);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 void SampleChannel::setMute(bool internal)
 {
 	audioProc::setMute(this, internal);

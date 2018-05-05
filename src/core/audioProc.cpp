@@ -1,6 +1,7 @@
 #include <cassert>
 #include <samplerate.h>
 #include "../utils/math.h"
+#include "../glue/channel.h"
 #include "const.h"
 #include "conf.h"
 #include "wave.h"
@@ -373,6 +374,43 @@ void kill(SampleChannel* ch, int localFrame)
 			hardStop(ch, localFrame);
 		else
 			ch->setFadeOut(SampleChannel::DO_STOP);
+	}
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void manualKill(SampleChannel* ch)
+{
+	/* action recording on:
+			if sequencer is running, rec a killchan
+		 action recording off:
+			if chan has recorded events:
+			|	 if seq is playing OR channel 'c' is stopped, de/activate recs
+			|	 else kill chan
+			else kill chan. */
+
+	if (m::recorder::active) {
+		if (!m::clock::isRunning()) 
+			return;
+		kill(ch, 0); // on frame 0: user-generated event
+		if (m::recorder::canRec(ch, m::clock::isRunning(), m::mixer::recording) &&
+				!(ch->mode & LOOP_ANY))
+		{   // don't record killChan actions for LOOP channels
+			m::recorder::rec(ch->index, G_ACTION_KILL, m::clock::getCurrentFrame());
+			ch->hasActions = true;
+		}
+	}
+	else {
+		if (ch->hasActions) {
+			if (m::clock::isRunning() || ch->status == STATUS_OFF)
+				ch->readActions ? c::channel::stopReadingRecs(ch) : c::channel::startReadingRecs(ch);
+			else
+				kill(ch, 0);  // on frame 0: user-generated event
+		}
+		else
+			kill(ch, 0);    // on frame 0: user-generated event
 	}
 }
 

@@ -118,6 +118,15 @@ void MidiChannel::kill(int localFrame)
 /* -------------------------------------------------------------------------- */
 
 
+void MidiChannel::manualKill()
+{
+	midiProc::kill(this, 0);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 void MidiChannel::rewind()
 {
 	midiProc::rewind(this);
