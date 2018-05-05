@@ -117,6 +117,8 @@ public:
 	void setFadeOut(int actionPostFadeout);
 	void setXFade(int frame);
 
+	void setReadActions(bool v, bool recsStopOnChanHalt);
+
 	/* onPreviewEnd
 	A callback fired when audio preview ends. */
 

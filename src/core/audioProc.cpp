@@ -160,77 +160,6 @@ void onFirstBeat(SampleChannel* ch, int localFrame)
 
 /* -------------------------------------------------------------------------- */
 
-
-void setMute(SampleChannel* ch, bool internal)
-{
-	if (internal) {
-
-		/* global mute is on? don't waste time with fadeout, just mute it
-		 * internally */
-
-		if (ch->mute)
-			ch->mute_i = true;
-		else {
-			if (ch->isPlaying())
-				ch->setFadeOut(SampleChannel::DO_MUTE_I);
-			else
-				ch->mute_i = true;
-		}
-	}
-	else {
-
-		/* internal mute is on? don't waste time with fadeout, just mute it
-		 * globally */
-
-		if (ch->mute_i)
-			ch->mute = true;
-		else {
-
-			/* sample in play? fadeout needed. Else, just mute it globally */
-
-			if (ch->isPlaying())
-				ch->setFadeOut(SampleChannel::DO_MUTE);
-			else
-				ch->mute = true;
-		}
-	}
-
-	ch->sendMidiLmute(); /* MIDI TODO ********** */
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void unsetMute(SampleChannel* ch, bool internal)
-{
-	if (internal) {
-		if (ch->mute)
-			ch->mute_i = false;
-		else {
-			if (ch->isPlaying())
-				ch->setFadeIn(internal);
-			else
-				ch->mute_i = false;
-		}
-	}
-	else {
-		if (ch->mute_i)
-			ch->mute = false;
-		else {
-			if (ch->isPlaying())
-				ch->setFadeIn(internal);
-			else
-				ch->mute = false;
-		}
-	}
-
-	ch->sendMidiLmute(); /* MIDI TODO ********** */
-}
-
-
-/* -------------------------------------------------------------------------- */
-
 /* calcVolumeEnv
 Computes any changes in volume done via envelope tool. */
 
@@ -427,6 +356,15 @@ void setReadActions(SampleChannel* ch, bool v, bool recsStopOnChanHalt)
 /* -------------------------------------------------------------------------- */
 
 
+void empty(SampleChannel* ch)
+{
+	ch->sendMidiLplay();/* MIDI TODO ********** */
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 void kill(SampleChannel* ch, int localFrame)
 {
 	if (ch->wave != nullptr && ch->status != STATUS_OFF) {
@@ -497,6 +435,77 @@ void rewind(SampleChannel* ch)
 		if ((ch->mode & LOOP_ANY) || (ch->recStatus == REC_READING && (ch->mode & SINGLE_ANY)))
 			rewind(ch, 0);  // rewind is user-generated events, always on frame 0
 	}	
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void setMute(SampleChannel* ch, bool internal)
+{
+	if (internal) {
+
+		/* global mute is on? don't waste time with fadeout, just mute it
+		 * internally */
+
+		if (ch->mute)
+			ch->mute_i = true;
+		else {
+			if (ch->isPlaying())
+				ch->setFadeOut(SampleChannel::DO_MUTE_I);
+			else
+				ch->mute_i = true;
+		}
+	}
+	else {
+
+		/* internal mute is on? don't waste time with fadeout, just mute it
+		 * globally */
+
+		if (ch->mute_i)
+			ch->mute = true;
+		else {
+
+			/* sample in play? fadeout needed. Else, just mute it globally */
+
+			if (ch->isPlaying())
+				ch->setFadeOut(SampleChannel::DO_MUTE);
+			else
+				ch->mute = true;
+		}
+	}
+
+	ch->sendMidiLmute(); /* MIDI TODO ********** */
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void unsetMute(SampleChannel* ch, bool internal)
+{
+	if (internal) {
+		if (ch->mute)
+			ch->mute_i = false;
+		else {
+			if (ch->isPlaying())
+				ch->setFadeIn(internal);
+			else
+				ch->mute_i = false;
+		}
+	}
+	else {
+		if (ch->mute_i)
+			ch->mute = false;
+		else {
+			if (ch->isPlaying())
+				ch->setFadeIn(internal);
+			else
+				ch->mute = false;
+		}
+	}
+
+	ch->sendMidiLmute(); /* MIDI TODO ********** */
 }
 
 

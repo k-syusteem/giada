@@ -96,7 +96,7 @@ public:
 	the channel has been started by a human key press and not a pre-recorded
 	action. */
 
-	virtual void start(int frame, bool doQuantize, int quantize,
+	virtual void start(int localFrame, bool doQuantize, int quantize,
 			bool mixerIsRunning, bool forceStart, bool isUserGenerated) = 0;
 
 	/* stop
@@ -107,7 +107,7 @@ public:
 	/* kill
 	What to do when channel stops abruptly. */
 
-	virtual void kill(int frame) = 0;
+	virtual void kill(int localFrame) = 0;
 
 	/* mute
 	What to do when channel is muted. If internal == true, set internal mute 

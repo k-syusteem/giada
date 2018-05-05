@@ -178,11 +178,56 @@ void SampleChannel::rewind()
 /* -------------------------------------------------------------------------- */
 
 
+void SampleChannel::start(int localFrame, bool doQuantize, int quantize,
+		bool mixerIsRunning, bool forceStart, bool isUserGenerated)
+{
+	audioProc::start(this, localFrame, doQuantize, forceStart, isUserGenerated);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void SampleChannel::stop()
+{
+	audioProc::stop(this);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 void SampleChannel::stopBySeq(bool chansStopOnSeqHalt)
 {
 	audioProc::stopBySeq(this, chansStopOnSeqHalt);
 }
 
+
+/* -------------------------------------------------------------------------- */
+
+
+void SampleChannel::kill(int localFrame)
+{
+	audioProc::kill(this, localFrame);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void SampleChannel::setMute(bool internal)
+{
+	audioProc::setMute(this, internal);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void SampleChannel::unsetMute(bool internal)
+{
+	audioProc::unsetMute(this, internal);
+}
 
 /* -------------------------------------------------------------------------- */
 
@@ -210,6 +255,15 @@ void SampleChannel::writePatch(int i, bool isProject)
 {
 	Channel::writePatch(i, isProject);
 	channelManager::writePatch(this, isProject, i);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void SampleChannel::setReadActions(bool v, bool recsStopOnChanHalt)
+{
+	audioProc::setReadActions(this, v, recsStopOnChanHalt);
 }
 
 
@@ -384,7 +438,8 @@ void SampleChannel::empty()
 	status  = STATUS_EMPTY;
   volume  = G_DEFAULT_VOL;
   boost   = G_DEFAULT_BOOST;
-	sendMidiLplay();
+  
+	audioProc::empty(this);
 }
 
 
@@ -441,22 +496,6 @@ int SampleChannel::fillChan(giada::m::AudioBuffer& dest, int start, int offset, 
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::setMute(bool internal)
-{
-}
-void SampleChannel::unsetMute(bool internal)
-{
-}
 void SampleChannel::reset(int frame) // audioProc::rewind
-{
-}
-void SampleChannel::start(int frame, bool doQuantize, int quantize,
-		bool mixerIsRunning, bool forceStart, bool isUserGenerated)
-{
-}
-void SampleChannel::kill(int frame)
-{
-}
-void SampleChannel::stop()
 {
 }

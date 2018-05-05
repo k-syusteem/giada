@@ -50,9 +50,9 @@ public:
 	void fillBuffer() override;
 	void parseEvents(giada::m::mixer::FrameEvents fe, size_t index) override;
 	void process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in) override;
-	void start(int frame, bool doQuantize, int quantize, bool mixerIsRunning,
+	void start(int localFrame, bool doQuantize, int quantize, bool mixerIsRunning,
 		bool forceStart, bool isUserGenerated) override;
-	void kill(int frame) override;
+	void kill(int localFrame) override;
 	void empty() override;
 	void stopBySeq(bool chansStopOnSeqHalt) override;
 	void stop() override;

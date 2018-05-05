@@ -144,7 +144,7 @@ void cleanPress(SampleChannel* ch, int velocity)
 	if (ch->mode & SINGLE_ANY && ch->midiInVeloAsVol)
 		ch->setVolumeI(u::math::map((float)velocity, 0.0f, 127.0f, 0.0f, 1.0f));
 
-	m::audioProc::start(ch, 0, true, false, true);
+	ch->start(0, true, m::clock::getQuantize(), m::clock::isRunning(), false, true); // on frame 0: user-generated event
 }
 
 } // {anonymous}
@@ -213,7 +213,7 @@ void keyRelease(SampleChannel* ch, bool ctrl, bool shift)
 	if (ctrl || shift)
 		return;
 
-	audioProc::stop(ch);
+	ch->stop();
 
 	/* record a key release only if channel is single_press. For any
 	 * other mode the KEY REL is meaningless. */

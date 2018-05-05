@@ -108,6 +108,15 @@ void MidiChannel::start(int frame, bool doQuantize, int quantize,
 /* -------------------------------------------------------------------------- */
 
 
+void MidiChannel::kill(int localFrame)
+{
+	midiProc::kill(this, localFrame);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 void MidiChannel::rewind()
 {
 	midiProc::rewind(this);
@@ -174,9 +183,6 @@ void MidiChannel::addVstMidiEvent(uint32_t msg, int localFrame)
 
 void MidiChannel::stop() {}
 void MidiChannel::empty() {}
-void MidiChannel::kill(int frame)
-{
-}
 
 
 /* -------------------------------------------------------------------------- */

@@ -57,6 +57,15 @@ void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart,
 Rewinds channel when rewind button on main transport is pressed. */
 
 void rewind(SampleChannel* ch);
+
+/* empty
+Frees any associated resources (e.g. waveform). */
+
+void empty(SampleChannel* ch);
+
+
+void setMute  (SampleChannel* ch, bool internal);
+void unsetMute(SampleChannel* ch, bool internal);
 }}};
 
 
