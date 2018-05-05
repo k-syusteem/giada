@@ -226,18 +226,18 @@ void SampleChannel::manualKill()
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::setMute(bool internal)
+void SampleChannel::setMute(bool isUserGenerated)
 {
-	audioProc::setMute(this, internal);
+	audioProc::setMute(this, isUserGenerated);
 }
 
 
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::unsetMute(bool internal)
+void SampleChannel::unsetMute(bool isUserGenerated)
 {
-	audioProc::unsetMute(this, internal);
+	audioProc::unsetMute(this, isUserGenerated);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -443,13 +443,13 @@ void SampleChannel::empty()
 		delete wave;
 		wave = nullptr;
 	}
-  begin   = 0;
-  end     = 0;
-  tracker = 0;
-	status  = STATUS_EMPTY;
-  volume  = G_DEFAULT_VOL;
-  boost   = G_DEFAULT_BOOST;
-  
+  begin      = 0;
+  end        = 0;
+  tracker    = 0;
+	status     = STATUS_EMPTY;
+  volume     = G_DEFAULT_VOL;
+  boost      = G_DEFAULT_BOOST;
+  hasActions = false;
 	audioProc::empty(this);
 }
 

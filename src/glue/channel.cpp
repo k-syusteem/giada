@@ -160,7 +160,6 @@ void freeChannel(Channel* ch)
 
 	G_MainWin->keyboard->freeChannel(ch->guiChannel);
 	m::recorder::clearChan(ch->index);
-	ch->hasActions = false;
 	ch->empty();
 
 	/* delete any related subwindow */
@@ -286,7 +285,7 @@ void toggleMute(Channel* ch, bool gui)
 			&mixer::mutex);
 	}
 
-	ch->mute ? ch->unsetMute(false) : ch->setMute(false);
+	ch->mute ? ch->unsetMute(true) : ch->setMute(true); // User-generated
 
 	if (!gui) {
 		Fl::lock();

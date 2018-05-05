@@ -136,7 +136,7 @@ void MidiChannel::rewind()
 /* -------------------------------------------------------------------------- */
 
 
-void MidiChannel::setMute(bool internal)
+void MidiChannel::setMute(bool isUserGenerated)
 {
 	midiProc::mute(this);
 }
@@ -145,7 +145,7 @@ void MidiChannel::setMute(bool internal)
 /* -------------------------------------------------------------------------- */
 
 
-void MidiChannel::unsetMute(bool internal)
+void MidiChannel::unsetMute(bool isUserGenerated)
 {
 	midiProc::unmute(this);
 }
@@ -192,7 +192,15 @@ void MidiChannel::addVstMidiEvent(uint32_t msg, int localFrame)
 
 
 void MidiChannel::stop(bool isUserGenerated) {}
-void MidiChannel::empty() {}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void MidiChannel::empty()
+{
+	hasActions = false;
+}
 
 
 /* -------------------------------------------------------------------------- */

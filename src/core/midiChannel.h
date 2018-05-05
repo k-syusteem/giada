@@ -58,8 +58,8 @@ public:
 	void stopBySeq(bool chansStopOnSeqHalt) override;
 	void stop(bool isUserGenerated) override;
 	void rewind() override;
-	void setMute(bool internal) override;
-	void unsetMute(bool internal) override;
+	void setMute(bool isUserGenerated) override;
+	void unsetMute(bool isUserGenerated) override;
 	void readPatch(const std::string& basePath, int i) override;
 	void writePatch(int i, bool isProject) override;
 	void receiveMidi(const giada::m::MidiEvent& midiEvent) override;

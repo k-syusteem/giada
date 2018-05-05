@@ -111,12 +111,11 @@ public:
 	virtual void kill(int localFrame) = 0;
 	virtual void manualKill() = 0;
 
-	/* mute
-	What to do when channel is muted. If internal == true, set internal mute 
-	without altering main mute. */
+	/* set/unsetMute
+	What to do when channel is muted. */
 
-	virtual void setMute  (bool internal) = 0;
-	virtual void unsetMute(bool internal) = 0;
+	virtual void setMute  (bool userGenerated) = 0;
+	virtual void unsetMute(bool userGenerated) = 0;
 
 	/* empty
 	Frees any associated resources (e.g. waveform for SAMPLE). */

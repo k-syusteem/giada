@@ -488,9 +488,9 @@ void rewind(SampleChannel* ch)
 /* -------------------------------------------------------------------------- */
 
 
-void setMute(SampleChannel* ch, bool internal)
+void setMute(SampleChannel* ch, bool isUserGenerated)
 {
-	if (internal) {
+	if (!isUserGenerated) {
 
 		/* global mute is on? don't waste time with fadeout, just mute it
 		 * internally */
@@ -529,14 +529,14 @@ void setMute(SampleChannel* ch, bool internal)
 /* -------------------------------------------------------------------------- */
 
 
-void unsetMute(SampleChannel* ch, bool internal)
+void unsetMute(SampleChannel* ch, bool isUserGenerated)
 {
-	if (internal) {
+	if (!isUserGenerated) {
 		if (ch->mute)
 			ch->mute_i = false;
 		else {
 			if (ch->isPlaying())
-				ch->setFadeIn(internal);
+				ch->setFadeIn(isUserGenerated);
 			else
 				ch->mute_i = false;
 		}
@@ -546,7 +546,7 @@ void unsetMute(SampleChannel* ch, bool internal)
 			ch->mute = false;
 		else {
 			if (ch->isPlaying())
-				ch->setFadeIn(internal);
+				ch->setFadeIn(isUserGenerated);
 			else
 				ch->mute = false;
 		}
