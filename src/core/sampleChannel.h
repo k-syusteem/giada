@@ -63,7 +63,6 @@ public:
 	void fillBuffer() override;
 	void parseEvents(giada::m::mixer::FrameEvents fe, size_t index) override;
 	void process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in) override;
-	void preview(giada::m::AudioBuffer& out) override;
 	void start(int frame, bool doQuantize, int quantize, bool mixerIsRunning,
 		bool forceStart, bool isUserGenerated) override;
 	void kill(int frame) override;
@@ -75,11 +74,6 @@ public:
 	void unsetMute(bool internal) override;
   void readPatch(const std::string& basePath, int i) override;
 	void writePatch(int i, bool isProject) override;
-	void quantize(int index, int localFrame, int globalFrame) override;
-	void onZero(int frame, bool recsStopOnChanHalt) override;
-	void onBar(int frame) override;
-	void parseAction(giada::m::recorder::action* a, int localFrame, int globalFrame,
-			int quantize, bool mixerIsRunning) override;
 	bool canInputRec() override;
 	bool allocBuffers() override;
 

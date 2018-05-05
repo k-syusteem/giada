@@ -441,16 +441,6 @@ int SampleChannel::fillChan(giada::m::AudioBuffer& dest, int start, int offset, 
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::parseAction(recorder::action* a, int localFrame,
-		int globalFrame, int quantize, bool mixerIsRunning)
-{
-}
-void SampleChannel::onZero(int frame, bool recsStopOnChanHalt)
-{
-}
-void SampleChannel::quantize(int index, int localFrame, int globalFrame)
-{
-}
 void SampleChannel::setMute(bool internal)
 {
 }
@@ -460,14 +450,8 @@ void SampleChannel::unsetMute(bool internal)
 void SampleChannel::reset(int frame) // audioProc::rewind
 {
 }
-void SampleChannel::preview(giada::m::AudioBuffer& out)
-{
-}
 void SampleChannel::start(int frame, bool doQuantize, int quantize,
 		bool mixerIsRunning, bool forceStart, bool isUserGenerated)
-{
-}
-void SampleChannel::onBar(int frame)
 {
 }
 void SampleChannel::kill(int frame)

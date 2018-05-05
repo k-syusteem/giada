@@ -90,12 +90,6 @@ public:
 
 	virtual void process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in) = 0;
 
-	/* Preview
-	Makes itself audibile for audio preview, such as Sample Editor or other
-	tools. */
-
-	virtual void preview(giada::m::AudioBuffer& in) = 0;
-
 	/* start
 	Action to do when channel starts. doQuantize = false (don't quantize)
 	when Mixer is reading actions from Recorder. If isUserGenerated means that
@@ -131,34 +125,6 @@ public:
 	What to do when channel is stopped by sequencer. */
 
 	virtual void stopBySeq(bool chansStopOnSeqHalt) = 0;
-
-	/* quantize
-	Starts channel according to quantizer. Index = array index of mixer::channels 
-	used by recorder, localFrame = frame within the current buffer, 
-	globalFrame = frame within the whole sequencer loop.  */
-
-	virtual void quantize(int index, int localFrame, int globalFrame) = 0;
-
-	/* onZero
-	What to do when frame goes to zero, i.e. sequencer restart. */
-
-	virtual void onZero(int frame, bool recsStopOnChanHalt) = 0;
-
-	/* onBar
-	What to do when a bar has passed. */
-
-	virtual void onBar(int frame) = 0;
-
-	/* parseAction
-	Does something on a recorded action. Parameters:
-		- action *a   - action to parse
-	  - localFrame  - frame number of the processed buffer
-	  - globalFrame - actual frame in Mixer */
-
-	 // TODO - quantize is useless!
-
-	virtual void parseAction(giada::m::recorder::action* a, int localFrame,
-    int globalFrame, int quantize, bool mixerIsRunning) = 0;
 
 	/* rewind
 	Rewinds channel when rewind button is pressed. */

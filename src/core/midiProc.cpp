@@ -132,7 +132,7 @@ void rewind(MidiChannel* ch)
 
 void mute(MidiChannel* ch)
 {
-	mute = true;
+	ch->mute = true;
 	if (ch->midiOut)
 		kernelMidi::send(MIDI_ALL_NOTES_OFF);
 #ifdef WITH_VST

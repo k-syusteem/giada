@@ -101,7 +101,7 @@ void MidiChannel::stopBySeq(bool chansStopOnSeqHalt)
 void MidiChannel::start(int frame, bool doQuantize, int quantize,
 		bool mixerIsRunning, bool forceStart, bool isUserGenerated)
 {
-	audioProc::start(this);
+	midiProc::start(this);
 }
 
 
@@ -172,21 +172,9 @@ void MidiChannel::addVstMidiEvent(uint32_t msg, int localFrame)
 /* -------------------------------------------------------------------------- */
 
 
-void MidiChannel::onBar(int frame) {}
 void MidiChannel::stop() {}
 void MidiChannel::empty() {}
-void MidiChannel::quantize(int index, int localFrame, int globalFrame) {}
-void MidiChannel::parseAction(recorder::action* a, int localFrame,
-		int globalFrame, int quantize, bool mixerIsRunning)
-{
-}
-void MidiChannel::onZero(int frame, bool recsStopOnChanHalt)
-{
-}
 void MidiChannel::kill(int frame)
-{
-}
-void MidiChannel::preview(giada::m::AudioBuffer& out)
 {
 }
 

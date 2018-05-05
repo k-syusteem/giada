@@ -60,6 +60,10 @@ void hardStop(SampleChannel* ch, int localFrame)
 
 /* -------------------------------------------------------------------------- */
 
+/* quantize
+Starts channel according to quantizer. Index = array index of mixer::channels 
+used by recorder, localFrame = frame within the current buffer, 
+globalFrame = frame within the whole sequencer loop.  */
 
 void quantize(SampleChannel* ch, int index, int localFrame, int globalFrame)
 {
