@@ -97,7 +97,8 @@ public:
 	action. */
 
 	virtual void start(int localFrame, bool doQuantize, int quantize,
-			bool mixerIsRunning, bool forceStart, bool isUserGenerated) = 0;
+		bool mixerIsRunning, bool forceStart, bool isUserGenerated, bool record,
+		int velocity) = 0;
 
 	/* stop
 	What to do when channel is stopped normally (via key or MIDI). */

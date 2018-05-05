@@ -1,5 +1,6 @@
 #include <cassert>
 #include <samplerate.h>
+#include "../utils/math.h"
 #include "const.h"
 #include "conf.h"
 #include "wave.h"
@@ -205,11 +206,11 @@ void parseAction(SampleChannel* ch, const recorder::action* a, int localFrame,
 	switch (a->type) {
 		case G_ACTION_KEYPRESS:
 			if (ch->mode & SINGLE_ANY)
-				start(ch, localFrame, false, false, false);
+				start(ch, localFrame, false, false, false, false, -1);
 			break;
 		case G_ACTION_KEYREL:
 			if (ch->mode & SINGLE_ANY)
-				stop(ch);
+				stop(ch, false);
 			break;
 		case G_ACTION_KILL:
 			if (ch->mode & SINGLE_ANY)
@@ -522,8 +523,45 @@ void unsetMute(SampleChannel* ch, bool internal)
 
 /* TODO join doQuantize, forceStart into one parameter */
 void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart, 
-	bool isUserGenerated)
+	bool isUserGenerated, bool record, int velocity)
 {
+	if (record) {
+		/* Record now if the quantizer is off, otherwise let mixer to handle it when a
+		quantoWait has passed. Moreover, KEYPRESS and KEYREL are meaningless for loop 
+		modes. */
+		if (m::clock::getQuantize() == 0 &&
+				m::recorder::canRec(ch, m::clock::isRunning(), m::mixer::recording) &&
+				!(ch->mode & LOOP_ANY))
+		{
+			if (ch->mode == SINGLE_PRESS) {
+				m::recorder::startOverdub(ch->index, G_ACTION_KEYS, m::clock::getCurrentFrame(),
+					m::kernelAudio::getRealBufSize());
+				ch->readActions = false;   // don't read actions while overdubbing
+			}
+			else {
+				m::recorder::rec(ch->index, G_ACTION_KEYPRESS, m::clock::getCurrentFrame());
+				ch->hasActions = true;
+
+				/* Why return here? You record an action and then you call ch->start: 
+				Mixer, which is on another thread, reads your newly recorded action if you 
+				have readActions == true, and then ch->start kicks in right after it.
+				The result: Mixer plays the channel (due to the new action) but the code
+				in the switch below  kills it right away (because the sample is playing). 
+				Fix: start channel only if you are not recording anything, i.e. let 
+				Mixer play it. */
+
+				if (ch->readActions)
+					return;
+			}
+		}
+	}
+
+	if (velocity != 0) {
+		/* For one-shot modes, velocity drives the internal volume. */
+		if (ch->mode & SINGLE_ANY && ch->midiInVeloAsVol)
+			ch->setVolumeI(u::math::map((float)velocity, 0.0f, 127.0f, 0.0f, 1.0f));		
+	}
+
 	switch (ch->status)	{
 		case STATUS_EMPTY:
 		case STATUS_MISSING:

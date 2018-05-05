@@ -61,15 +61,6 @@ namespace io
 {
 namespace
 {
-void ctrlPress(SampleChannel* ch)
-{
-	c::channel::toggleMute(ch);
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 void shiftPress(SampleChannel* ch)
 {
 	/* action recording on:
@@ -102,51 +93,6 @@ void shiftPress(SampleChannel* ch)
 			ch->kill(0);    // on frame 0: user-generated event
 	}
 }
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void cleanPress(SampleChannel* ch, int velocity)
-{
-	/* Record now if the quantizer is off, otherwise let mixer to handle it when a
-	quantoWait has passed. Moreover, KEYPRESS and KEYREL are meaningless for loop 
-	modes. */
-
-	if (m::clock::getQuantize() == 0 &&
-			m::recorder::canRec(ch, m::clock::isRunning(), m::mixer::recording) &&
-			!(ch->mode & LOOP_ANY))
-	{
-		if (ch->mode == SINGLE_PRESS) {
-			m::recorder::startOverdub(ch->index, G_ACTION_KEYS, m::clock::getCurrentFrame(),
-				m::kernelAudio::getRealBufSize());
-			ch->readActions = false;   // don't read actions while overdubbing
-		}
-		else {
-			m::recorder::rec(ch->index, G_ACTION_KEYPRESS, m::clock::getCurrentFrame());
-			ch->hasActions = true;
-
-			/* Why return here? You record an action and then you call ch->start: 
-			Mixer, which is on another thread, reads your newly recorded action if you 
-			have readActions == true, and then ch->start kicks in right after it.
-			The result: Mixer plays the channel (due to the new action) but ch->start
-			kills it right away (because the sample is playing). Fix: call ch->start
-			only if you are not recording anything, i.e. let Mixer play it. */
-
-			if (ch->readActions)
-				return;
-		}
-	}
-
-	/* This is a user-generated event, so it's on frame 0. For one-shot modes,
-	velocity drives the internal volume. */
-
-	if (ch->mode & SINGLE_ANY && ch->midiInVeloAsVol)
-		ch->setVolumeI(u::math::map((float)velocity, 0.0f, 127.0f, 0.0f, 1.0f));
-
-	ch->start(0, true, m::clock::getQuantize(), m::clock::isRunning(), false, true); // on frame 0: user-generated event
-}
-
 } // {anonymous}
 
 
@@ -185,7 +131,7 @@ void keyPress(MidiChannel* ch, bool ctrl, bool shift)
 	if (shift)
 		ch->kill(0);        // on frame 0: user-generated event
 	else
-		ch->start(0, true, m::clock::getQuantize(), m::clock::isRunning(), false, true); // on frame 0: user-generated event
+		ch->start(0, true, m::clock::getQuantize(), m::clock::isRunning(), false, true, true, -1); // on frame 0: user-generated event
 }
 
 
@@ -195,11 +141,11 @@ void keyPress(MidiChannel* ch, bool ctrl, bool shift)
 void keyPress(SampleChannel* ch, bool ctrl, bool shift, int velocity)
 {
 	if (ctrl)
-		ctrlPress(ch);
+		c::channel::toggleMute(ch);
 	else if (shift)
 		shiftPress(ch);
 	else
-		cleanPress(ch, velocity);
+		ch->start(0, true, m::clock::getQuantize(), m::clock::isRunning(), false, true, true, velocity); // on frame 0: user-generated event
 }
 
 
@@ -334,7 +280,7 @@ int stopInputRec(bool gui)
 		SampleChannel* sch = static_cast<SampleChannel*>(ch);
 		if (sch->mode & (LOOP_ANY) && sch->status == STATUS_OFF && sch->armed)
 			sch->start(clock::getCurrentFrame(), true, clock::getQuantize(),
-				clock::isRunning(), true, true);
+				clock::isRunning(), true, true, false, 0);
 	}
 
 	Fl::lock();

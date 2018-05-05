@@ -99,7 +99,8 @@ void MidiChannel::stopBySeq(bool chansStopOnSeqHalt)
 
 
 void MidiChannel::start(int frame, bool doQuantize, int quantize,
-		bool mixerIsRunning, bool forceStart, bool isUserGenerated)
+		bool mixerIsRunning, bool forceStart, bool isUserGenerated, bool record,
+		int velocity)
 {
 	midiProc::start(this);
 }

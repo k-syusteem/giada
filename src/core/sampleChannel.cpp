@@ -179,9 +179,11 @@ void SampleChannel::rewind()
 
 
 void SampleChannel::start(int localFrame, bool doQuantize, int quantize,
-		bool mixerIsRunning, bool forceStart, bool isUserGenerated)
+		bool mixerIsRunning, bool forceStart, bool isUserGenerated, bool record,
+		int velocity)
 {
-	audioProc::start(this, localFrame, doQuantize, forceStart, isUserGenerated);
+	audioProc::start(this, localFrame, doQuantize, forceStart, isUserGenerated,
+		record, velocity);
 }
 
 
