@@ -26,7 +26,7 @@
 
 
 #include "../utils/log.h"
-#include "midiChannel.h"
+#include "midiProc.h"
 #include "channelManager.h"
 #include "channel.h"
 #include "patch.h"
@@ -36,6 +36,7 @@
 #include "mixer.h"
 #include "pluginHost.h"
 #include "kernelMidi.h"
+#include "midiChannel.h"
 
 
 using std::string;
@@ -73,7 +74,81 @@ void MidiChannel::copy(const Channel* src_, pthread_mutex_t* pluginMutex)
 
 void MidiChannel::parseEvents(mixer::FrameEvents fe, size_t index)
 {
-	// TODO
+	midiProc::parseEvents(this, fe, index);
+}
+
+/* -------------------------------------------------------------------------- */
+
+
+void MidiChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in)
+{
+	midiProc::process(this, out, in);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void MidiChannel::stopBySeq(bool chansStopOnSeqHalt)
+{
+	midiProc::stopBySeq(this);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void MidiChannel::start(int frame, bool doQuantize, int quantize,
+		bool mixerIsRunning, bool forceStart, bool isUserGenerated)
+{
+	audioProc::start(this);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void MidiChannel::rewind()
+{
+	midiProc::rewind(this);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void MidiChannel::setMute(bool internal)
+{
+	midiProc::mute(this);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void MidiChannel::unsetMute(bool internal)
+{
+	midiProc::unmute(this);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void MidiChannel::readPatch(const string& basePath, int i)
+{
+	Channel::readPatch("", i);
+	channelManager::readPatch(this, i);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void MidiChannel::writePatch(int i, bool isProject)
+{
+	Channel::writePatch(i, isProject);
+	channelManager::writePatch(this, isProject, i);
 }
 
 
@@ -98,161 +173,21 @@ void MidiChannel::addVstMidiEvent(uint32_t msg, int localFrame)
 
 
 void MidiChannel::onBar(int frame) {}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 void MidiChannel::stop() {}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 void MidiChannel::empty() {}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 void MidiChannel::quantize(int index, int localFrame, int globalFrame) {}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 void MidiChannel::parseAction(recorder::action* a, int localFrame,
 		int globalFrame, int quantize, bool mixerIsRunning)
 {
-	if (a->type == G_ACTION_MIDI)
-		sendMidi(a, localFrame);
 }
-
-
-/* -------------------------------------------------------------------------- */
-
-
 void MidiChannel::onZero(int frame, bool recsStopOnChanHalt)
 {
-	if (status == STATUS_ENDING) {
-		status = STATUS_OFF;
-		sendMidiLplay();
-	}
-	else
-	if (status == STATUS_WAIT) {
-		status = STATUS_PLAY;
-		sendMidiLplay();
-	}
 }
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void MidiChannel::setMute(bool internal)
-{
-	mute = true;  	// internal mute does not exist for midi (for now)
-	if (midiOut)
-		kernelMidi::send(MIDI_ALL_NOTES_OFF);
-#ifdef WITH_VST
-		addVstMidiEvent(MIDI_ALL_NOTES_OFF, 0);
-#endif
-	sendMidiLmute();
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void MidiChannel::unsetMute(bool internal)
-{
-	mute = false;  	// internal mute does not exist for midi (for now)
-	sendMidiLmute();
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void MidiChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in)
-{
-#ifdef WITH_VST
-	pluginHost::processStack(vChan, pluginHost::CHANNEL, this);
-#endif
-
-	/* TODO - isn't this useful only if WITH_VST ? */
-	for (int i=0; i<out.countFrames(); i++)
-		for (int j=0; j<out.countChannels(); j++)
-			out[i][j] += vChan[i][j] * volume;
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void MidiChannel::preview(giada::m::AudioBuffer& out)
-{
-	// No preview for MIDI channels (for now).
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void MidiChannel::start(int frame, bool doQuantize, int quantize,
-		bool mixerIsRunning, bool forceStart, bool isUserGenerated)
-{
-	switch (status) {
-		case STATUS_PLAY:
-			status = STATUS_ENDING;
-			sendMidiLplay();
-			break;
-		case STATUS_ENDING:
-		case STATUS_WAIT:
-			status = STATUS_OFF;
-			sendMidiLplay();
-			break;
-		case STATUS_OFF:
-			status = STATUS_WAIT;
-			sendMidiLplay();
-			break;
-	}
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void MidiChannel::stopBySeq(bool chansStopOnSeqHalt)
-{
-	kill(0);
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 void MidiChannel::kill(int frame)
 {
-	if (status & (STATUS_PLAY | STATUS_ENDING)) {
-		if (midiOut)
-			kernelMidi::send(MIDI_ALL_NOTES_OFF);
-#ifdef WITH_VST
-		addVstMidiEvent(MIDI_ALL_NOTES_OFF, 0);
-#endif
-	}
-	status = STATUS_OFF;
-	sendMidiLplay();
 }
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void MidiChannel::readPatch(const string& basePath, int i)
+void MidiChannel::preview(giada::m::AudioBuffer& out)
 {
-	Channel::readPatch("", i);
-	channelManager::readPatch(this, i);
 }
 
 
@@ -281,29 +216,6 @@ void MidiChannel::sendMidi(uint32_t data)
 		addVstMidiEvent(data, 0);
 #endif
 	}
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void MidiChannel::rewind()
-{
-	if (midiOut)
-		kernelMidi::send(MIDI_ALL_NOTES_OFF);
-#ifdef WITH_VST
-		addVstMidiEvent(MIDI_ALL_NOTES_OFF, 0);
-#endif
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void MidiChannel::writePatch(int i, bool isProject)
-{
-	Channel::writePatch(i, isProject);
-	channelManager::writePatch(this, isProject, i);
 }
 
 

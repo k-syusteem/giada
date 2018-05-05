@@ -550,6 +550,7 @@ void startInputRec()
 void mergeVirtualInput()
 {
 	for (Channel* ch : channels) {
+		/* TODO - move this to audioProc::*/
 		if (ch->type == G_CHANNEL_MIDI)
 			continue;
 		SampleChannel* sch = static_cast<SampleChannel*>(ch);
