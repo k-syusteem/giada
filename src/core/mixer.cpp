@@ -162,28 +162,6 @@ void clearAllBuffers(AudioBuffer& outBuf)
 
 /* -------------------------------------------------------------------------- */
 
-/* readActions
-Reads all recorded actions. */
-
-void readActions(unsigned frame)
-{
-/*	pthread_mutex_lock(&mutex_recs);
-	for (unsigned i=0; i<recorder::frames.size(); i++) {
-		if (recorder::frames.at(i) != clock::getCurrentFrame())
-			continue;
-		for (recorder::action* action : recorder::global.at(i)) {
-			Channel* ch = mh::getChannelByIndex(action->chan);
-			ch->parseAction(action, frame, clock::getCurrentFrame(), 
-				clock::getQuantize(), clock::isRunning());
-		}
-		break;
-	}
-	pthread_mutex_unlock(&mutex_recs);*/
-}
-
-
-/* -------------------------------------------------------------------------- */
-
 /* doQuantize
 Computes quantization on 'rewind' button and all channels. */
 
@@ -198,27 +176,6 @@ void doQuantize(unsigned frame)
 		rewindWait = false;
 		rewind();
 	}
-/*
-	pthread_mutex_lock(&mutex_chans);
-	for (unsigned i=0; i<channels.size(); i++)
-		channels.at(i)->quantize(i, frame, clock::getCurrentFrame());
-	pthread_mutex_unlock(&mutex_chans);*/
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-/* sumChannels
-Sums channels, i.e. lets them add sample frames to their virtual channels.
-This is required for G_CHANNEL_SAMPLE only */
-
-void sumChannels(unsigned frame)
-{
-/*	pthread_mutex_lock(&mutex_chans);
-	for (Channel* ch : channels)
-		if (ch->type == G_CHANNEL_SAMPLE)
-			static_cast<SampleChannel*>(ch)->sum(frame, clock::isRunning());
-	pthread_mutex_unlock(&mutex_chans);*/
 }
 
 
@@ -258,16 +215,12 @@ content to the output buffer). Process plugins too, if any. */
 
 void renderIO(AudioBuffer& outBuf, const AudioBuffer& inBuf)
 {
-	//pthread_mutex_lock(&mutex_chans);
 	for (Channel* channel : channels)
 		channel->process(outBuf, inBuf);
-	//pthread_mutex_unlock(&mutex_chans);
 
 #ifdef WITH_VST
-	//pthread_mutex_lock(&mutex_plugins);
 	pluginHost::processStack(outBuf, pluginHost::MASTER_OUT);
 	pluginHost::processStack(vChanInToOut, pluginHost::MASTER_IN);
-	//pthread_mutex_unlock(&mutex_plugins);
 #endif
 }
 
@@ -313,30 +266,8 @@ last frame). */
 
 void testBar(unsigned frame)
 {
-	if (!clock::isOnBar())
-		return;
-
-	if (metronome)
+	if (clock::isOnBar() && metronome)
 		tickPlay = true;
-
-/*	pthread_mutex_lock(&mutex_chans);
-	for (Channel* ch : channels)
-		ch->onBar(frame);
-	pthread_mutex_unlock(&mutex_chans);*/
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void testFirstBeat(unsigned frame)
-{
-	if (!clock::isOnFirstBeat())
-		return;
-/*	pthread_mutex_lock(&mutex_chans);
-	for (Channel* ch : channels)
-		ch->onZero(frame, conf::recsStopOnChanHalt);
-	pthread_mutex_unlock(&mutex_chans);*/
 }
 
 
@@ -345,11 +276,9 @@ void testFirstBeat(unsigned frame)
 
 void testLastBeat()
 {
-	if (clock::isOnBeat())
-		if (metronome && !tickPlay)
-			tockPlay = true;
+	if (clock::isOnBeat() && metronome && !tickPlay)
+		tockPlay = true;
 }
-
 }; // {anonymous}
 
 
@@ -456,10 +385,8 @@ int masterPlay(void* outBuf, void* inBuf, unsigned bufferSize,
 
 		if (clock::isRunning()) {
 			lineInRec(in, j);   // TODO - can go outside this loop
-			doQuantize(j);                  // CHANNELS prepare
-			testBar(j);                     // CHANNELS prepare
-			testFirstBeat(j);               // CHANNELS prepare
-			readActions(j);                 // CHANNELS prepare
+			doQuantize(j);
+			testBar(j);
 			clock::incrCurrentFrame();
 			testLastBeat();  // this test must be the last one
 			clock::sendMIDIsync();
