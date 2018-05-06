@@ -18,7 +18,7 @@ namespace audioProc
 {
 namespace
 {
-void rewind(SampleChannel* ch, int localFrame)
+void rewind_(SampleChannel* ch, int localFrame)
 {
 	ch->tracker = ch->begin;
 	ch->mute_i  = false;
@@ -37,12 +37,13 @@ void rewind(SampleChannel* ch, int localFrame)
 
 /* -------------------------------------------------------------------------- */
 
+
 /* quantize
 Starts channel according to quantizer. Index = array index of mixer::channels 
 used by recorder, localFrame = frame within the current buffer, 
 globalFrame = frame within the whole sequencer loop.  */
 
-void quantize(SampleChannel* ch, int index, int localFrame, int globalFrame)
+void quantize_(SampleChannel* ch, int index, int localFrame, int globalFrame)
 {
 	/* skip if LOOP_ANY or not in quantizer-wait mode */
 
@@ -59,7 +60,7 @@ void quantize(SampleChannel* ch, int index, int localFrame, int globalFrame)
 		ch->tracker = ch->fillBuffer(ch->buffer, ch->tracker, localFrame, true);  /// FIXME: ???
 	}
 	else
-		rewind(ch, localFrame);
+		rewind_(ch, localFrame);
 
 	/* Now we record the keypress, if the quantizer is on. SINGLE_PRESS needs 
 	overdub. */
@@ -80,11 +81,14 @@ void quantize(SampleChannel* ch, int index, int localFrame, int globalFrame)
 /* -------------------------------------------------------------------------- */
 
 
-void onBar(SampleChannel* ch, int localFrame)
+/* onBar
+Things to do when the sequencer is on a bar. */
+
+void onBar_(SampleChannel* ch, int localFrame)
 {
 	if (ch->mode == LOOP_REPEAT) {
 		if (ch->status == STATUS_PLAY)
-			rewind(ch, localFrame);
+			rewind_(ch, localFrame);
 	}
 	else
 	if (ch->mode == LOOP_ONCE_BAR) {
@@ -100,14 +104,17 @@ void onBar(SampleChannel* ch, int localFrame)
 /* -------------------------------------------------------------------------- */
 
 
-void onFirstBeat(SampleChannel* ch, int localFrame)
+/* onFirstBeat
+Things to do when the sequencer is on the first beat. */
+
+void onFirstBeat_(SampleChannel* ch, int localFrame)
 {
 	if (ch->wave == nullptr)
 		return;
 
 	if (ch->mode & LOOP_ANY) {
 		if (ch->status == STATUS_PLAY)
-			rewind(ch, localFrame);
+			rewind_(ch, localFrame);
 		else
 		if (ch->status == STATUS_ENDING)
 			kill(ch, localFrame);
@@ -133,10 +140,60 @@ void onFirstBeat(SampleChannel* ch, int localFrame)
 
 /* -------------------------------------------------------------------------- */
 
+
+/* processFrameOnEnd
+Things to do when the sample has reached the end (i.e. last frame). */
+
+void processFrameOnEnd_(SampleChannel* ch, int localFrame, bool isClockRunning)
+{
+	/* SINGLE_ENDLESS runs forever unless it's in ENDING mode. */
+
+	if (ch->mode & (SINGLE_BASIC | SINGLE_PRESS | SINGLE_RETRIG) ||
+		 (ch->mode == SINGLE_ENDLESS && ch->status == STATUS_ENDING)   ||
+		 (ch->mode & LOOP_ANY && !isClockRunning))     // stop loops when the seq is off
+	{
+		ch->status = STATUS_OFF;
+		ch->sendMidiLplay();/* MIDI TODO ********** */
+	}
+
+	/* LOOP_ONCE or LOOP_ONCE_BAR: if ending (i.e. the user requested their
+	 * termination), kill 'em. Let them wait otherwise. But don't put back in
+	 * wait mode those already stopped by the conditionals above. */
+
+	if (ch->mode & (LOOP_ONCE | LOOP_ONCE_BAR)) {
+		if (ch->status == STATUS_ENDING)
+			ch->status = STATUS_OFF;
+		else
+		if (ch->status != STATUS_OFF)
+			ch->status = STATUS_WAIT;
+	}
+
+	rewind_(ch, localFrame);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+/* processFrameOnPlay
+Things to do when the sample is playing. */
+
+void processFrameOnPlay_(SampleChannel* ch, int localFrame, bool isClockRunning)
+{
+	if (isClockRunning) 
+		ch->calcVolumeEnvelope();
+	for (int i=0; i<ch->buffer.countChannels(); i++)
+		ch->buffer[localFrame][i] *= (ch->mute || ch->mute_i) ? 0.0f : ch->volume_i;
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 /* calcVolumeEnv
 Computes any changes in volume done via envelope tool. */
 
-void calcVolumeEnv(SampleChannel* ch, int globalFrame)
+void calcVolumeEnv_(SampleChannel* ch, int globalFrame)
 {
 	/* method: check this frame && next frame, then calculate delta */
 
@@ -169,7 +226,7 @@ void calcVolumeEnv(SampleChannel* ch, int globalFrame)
 /* -------------------------------------------------------------------------- */
 
 
-void parseAction(SampleChannel* ch, const recorder::action* a, int localFrame, 
+void parseAction_(SampleChannel* ch, const recorder::action* a, int localFrame, 
 	int globalFrame)
 {
 	if (!ch->readActions)
@@ -195,7 +252,7 @@ void parseAction(SampleChannel* ch, const recorder::action* a, int localFrame,
 			unsetMute(ch, true); // internal mute
 			break;
 		case G_ACTION_VOLUME:
-			calcVolumeEnv(ch, globalFrame);
+			calcVolumeEnv_(ch, globalFrame);
 			break;
 	}
 }
@@ -204,56 +261,17 @@ void parseAction(SampleChannel* ch, const recorder::action* a, int localFrame,
 /* -------------------------------------------------------------------------- */
 
 
-void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
+void processFrame_(SampleChannel* ch, int localFrame, bool isClockRunning)
 {
+	assert(localFrame < ch->buffer.countFrames());
+
 	if (ch->wave == nullptr || !ch->isPlaying())
 		return;
 
-	if (localFrame != ch->frameRewind) {
-		if (isClockRunning) {         // volume envelope, only if seq is running
-			ch->volume_i += ch->volume_d;
-			if (ch->volume_i < 0.0f)
-				ch->volume_i = 0.0f;
-			else
-			if (ch->volume_i > 1.0f)
-				ch->volume_i = 1.0f;
-		}                        
-		if (ch->mute || ch->mute_i) {  // mute operations
-			for (int i=0; i<ch->buffer.countChannels(); i++)
-				ch->buffer[localFrame][i] = 0.0f;
-		}
-		else {
-			for (int i=0; i<ch->buffer.countChannels(); i++)
-				ch->buffer[localFrame][i] *= ch->volume_i;
-		}
-	}
-	else { // at this point the sample has reached the end */
-
-		/* Check for end of samples. SINGLE_ENDLESS runs forever unless it's in 
-		ENDING mode. */
-
-		if (ch->mode & (SINGLE_BASIC | SINGLE_PRESS | SINGLE_RETRIG) ||
-			 (ch->mode == SINGLE_ENDLESS && ch->status == STATUS_ENDING)   ||
-			 (ch->mode & LOOP_ANY && !isClockRunning))     // stop loops when the seq is off
-		{
-			ch->status = STATUS_OFF;
-			ch->sendMidiLplay();/* MIDI TODO ********** */
-		}
-
-		/* LOOP_ONCE or LOOP_ONCE_BAR: if ending (i.e. the user requested their
-		 * termination), kill 'em. Let them wait otherwise. But don't put back in
-		 * wait mode those already stopped by the conditionals above. */
-
-		if (ch->mode & (LOOP_ONCE | LOOP_ONCE_BAR)) {
-			if (ch->status == STATUS_ENDING)
-				ch->status = STATUS_OFF;
-			else
-			if (ch->status != STATUS_OFF)
-				ch->status = STATUS_WAIT;
-		}
-
-		rewind(ch, localFrame);
-	}
+	if (localFrame != ch->frameRewind)
+		processFrameOnPlay_(ch, localFrame, isClockRunning);
+	else 
+		processFrameOnEnd_(ch, localFrame, isClockRunning);
 }
 }; // {anonymous}
 
@@ -292,7 +310,7 @@ void kill(SampleChannel* ch, int localFrame)
 
 	ch->status = STATUS_OFF;
 	ch->sendMidiLplay();/* MIDI TODO ********** */
-	rewind(ch, localFrame);
+	rewind_(ch, localFrame);
 }
 
 
@@ -428,13 +446,13 @@ void stopBySeq(SampleChannel* ch, bool chansStopOnSeqHalt)
 /* -------------------------------------------------------------------------- */
 
 
-void rewind(SampleChannel* ch)
+void rewindBySeq(SampleChannel* ch)
 {
 	/* rewind LOOP_ANY or SINGLE_ANY only if it's in read-record-mode */
 
 	if (ch->wave != nullptr) {
 		if ((ch->mode & LOOP_ANY) || (ch->recStatus == REC_READING && (ch->mode & SINGLE_ANY)))
-			rewind(ch, 0);  // rewind is user-generated events, always on frame 0
+			rewind_(ch, 0);  // rewind is user-generated events, always on frame 0
 	}	
 }
 
@@ -544,7 +562,7 @@ void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart,
 				if (clock::getQuantize() > 0 && clock::isRunning() && doQuantize)
 					ch->qWait = true;
 				else
-					rewind(ch, localFrame);
+					rewind_(ch, localFrame);
 			}
 			else
 			if (ch->mode & (LOOP_ANY | SINGLE_ENDLESS)) {
@@ -580,23 +598,22 @@ void fillBuffer(SampleChannel* ch)
 }
 
 
-
 /* -------------------------------------------------------------------------- */
 
 
 void parseEvents(SampleChannel* ch, mixer::FrameEvents fe, size_t chanIndex)
 {
-	quantize(ch, chanIndex, fe.frameLocal, fe.frameGlobal);
+	quantize_(ch, chanIndex, fe.frameLocal, fe.frameGlobal);
 	if (fe.clockRunning) {
 		if (fe.onBar)
-			onBar(ch, fe.frameLocal);
+			onBar_(ch, fe.frameLocal);
 		if (fe.onFirstBeat)
-			onFirstBeat(ch, fe.frameLocal);
+			onFirstBeat_(ch, fe.frameLocal);
 		for (const recorder::action* action : fe.actions)
 			if (action->chan == ch->index)
-				parseAction(ch, action, fe.frameLocal, fe.frameGlobal);
+				parseAction_(ch, action, fe.frameLocal, fe.frameGlobal);
 	}
-	sum(ch, fe.frameLocal, fe.clockRunning);
+	processFrame_(ch, fe.frameLocal, fe.clockRunning);
 }
 
 
@@ -648,7 +665,7 @@ void process(SampleChannel* ch, m::AudioBuffer& out, const m::AudioBuffer& in)
 		/* If the tracker exceedes the end point and preview is looped, split the 
 		rendering as in SampleChannel::reset(). */
 
-		if (ch->trackerPreview + ch->buffer.countFrames() >= ch->end) {
+		if (ch->trackerPreview + ch->bufferPreview.countFrames() >= ch->end) {
 			int offset = ch->end - ch->trackerPreview;
 			ch->trackerPreview = ch->fillBuffer(ch->bufferPreview, ch->trackerPreview, 0, false);
 			ch->trackerPreview = ch->begin;

@@ -130,7 +130,7 @@ public:
 	/* rewind
 	Rewinds channel when rewind button is pressed. */
 
-	virtual void rewind() = 0;
+	virtual void rewindBySeq() = 0;
 
 	/* canInputRec
 	Tells whether a channel can accept and handle input audio. Always false for
@@ -178,7 +178,9 @@ public:
 	/* calcPanning
 	Given an audio channel (stereo: 0 or 1) computes the current panning value. */
 
-	float calcPanning(int ch);
+	float calcPanning(int ch) const;
+
+	void calcVolumeEnvelope();
 
 	bool isPlaying() const;
 	float getPan() const;

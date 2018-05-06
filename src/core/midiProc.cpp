@@ -116,7 +116,7 @@ void kill(MidiChannel* ch, int localFrame)
 /* -------------------------------------------------------------------------- */
 
 
-void rewind(MidiChannel* ch)
+void rewindBySeq(MidiChannel* ch)
 {
 	if (ch->midiOut)
 		kernelMidi::send(MIDI_ALL_NOTES_OFF);

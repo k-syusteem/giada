@@ -121,9 +121,9 @@ void MidiChannel::manualKill()
 /* -------------------------------------------------------------------------- */
 
 
-void MidiChannel::rewind()
+void MidiChannel::rewindBySeq()
 {
-	midiProc::rewind(this);
+	midiProc::rewindBySeq(this);
 }
 
 

@@ -50,6 +50,11 @@ Stops a channel when the stop button on main transport is pressed. */
 
 void stopBySeq(SampleChannel* ch, bool chansStopOnSeqHalt);
 
+/* rewind
+Rewinds channel when rewind button on main transport is pressed. */
+
+void rewindBySeq(SampleChannel* ch);
+
 /* start
 Starts a channel. doQuantize = false (don't quantize) when Mixer is reading 
 actions from Recorder. If isUserGenerated means that the channel has been 
@@ -57,11 +62,6 @@ started by a human key press and not by a pre-recorded action. */
 
 void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart, 
 	bool isUserGenerated, bool record, int velocity);
-
-/* rewind
-Rewinds channel when rewind button on main transport is pressed. */
-
-void rewind(SampleChannel* ch);
 
 /* empty
 Frees any associated resources (e.g. waveform). */

@@ -39,7 +39,7 @@ void stopBySeq(MidiChannel* ch);
 /* rewind
 Rewinds channel when rewind button on main transport is pressed. */
 
-void rewind(MidiChannel* ch);
+void rewindBySeq(MidiChannel* ch);
 
 /* mute|unmute
 Mutes/unmutes a channel. */

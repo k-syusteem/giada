@@ -150,9 +150,9 @@ void SampleChannel::fillBuffer()
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::rewind()
+void SampleChannel::rewindBySeq()
 {
-	audioProc::rewind(this);
+	audioProc::rewindBySeq(this);
 }
 
 

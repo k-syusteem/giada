@@ -165,7 +165,6 @@ int writePatch(const Channel* ch, bool isProject)
 	pch.armed           = ch->armed;
 	pch.column          = ch->guiChannel->getColumnIndex();
 	pch.mute            = ch->mute;
-	// pch.mute_s          = ch->mute_s;  TODO remove it with mute refactoring
 	pch.solo            = ch->solo;
 	pch.volume          = ch->volume;
 	pch.pan             = ch->pan;

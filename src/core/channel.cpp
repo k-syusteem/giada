@@ -288,7 +288,7 @@ void Channel::setVolumeI(float v)
 /* -------------------------------------------------------------------------- */
 
 
-float Channel::calcPanning(int ch)
+float Channel::calcPanning(int ch) const
 {
 	if (pan == 0.5f) // center: nothing to do
 		return 1.0;
@@ -296,6 +296,20 @@ float Channel::calcPanning(int ch)
 		return 1.0 - pan;
 	else  // channel 1
 		return pan; 
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void Channel::calcVolumeEnvelope()
+{
+	volume_i += volume_d;
+	if (volume_i < 0.0f)
+		volume_i = 0.0f;
+	else
+	if (volume_i > 1.0f)
+		volume_i = 1.0f;	
 }
 
 

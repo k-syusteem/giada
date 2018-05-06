@@ -66,8 +66,8 @@ public:
 		bool recsStopOnChanHalt) override;
 	void empty() override;
 	void stopBySeq(bool chansStopOnSeqHalt) override;
+	void rewindBySeq() override;
 	void stop(bool isUserGenerated) override;
-	void rewind() override;
 	void setMute(bool isUserGenerated) override;
 	void unsetMute(bool isUserGenerated) override;
   void readPatch(const std::string& basePath, int i) override;

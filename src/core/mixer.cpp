@@ -457,7 +457,7 @@ void rewind()
 	clock::rewind();
 	if (clock::isRunning())
 		for (Channel* ch : channels)
-			ch->rewind();
+			ch->rewindBySeq();
 }
 
 
