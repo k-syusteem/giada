@@ -53,28 +53,29 @@ public:
 	SampleChannel(bool inputMonitor);
 	~SampleChannel();
 
+	bool allocBuffers(int bufferSize) override;
 	void copy(const Channel* src, pthread_mutex_t* pluginMutex) override;
 	void fillBuffer() override;
 	void parseEvents(giada::m::mixer::FrameEvents fe, size_t index) override;
 	void process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in) override;
+  void readPatch(const std::string& basePath, int i) override;
+	void writePatch(int i, bool isProject) override;
+
 	void start(int frame, bool doQuantize, int quantize, bool mixerIsRunning,
 		bool forceStart, bool isUserGenerated, bool record, int velocity) override;
+	void stop(bool isUserGenerated) override;
 	void kill(int frame) override;
 	void manualKill() override;
+	void setMute(bool isUserGenerated) override;
+	void unsetMute(bool isUserGenerated) override;
 	void startReadingActions(bool treatRecsAsLoops, bool recsStopOnChanHalt) override;
 	void stopReadingActions(bool isClockRunning, bool treatRecsAsLoops, 
 		bool recsStopOnChanHalt) override;
 	void empty() override;
 	void stopBySeq(bool chansStopOnSeqHalt) override;
 	void rewindBySeq() override;
-	void stop(bool isUserGenerated) override;
-	void setMute(bool isUserGenerated) override;
-	void unsetMute(bool isUserGenerated) override;
-  void readPatch(const std::string& basePath, int i) override;
-	void writePatch(int i, bool isProject) override;
 	bool canInputRec() override;
 	void stopInputRec(int globalFrame, int quantize, bool mixerIsRunning) override;
-	bool allocBuffers(int bufferSize) override;
 
 	float getBoost() const;	
 	int   getBegin() const;

@@ -170,8 +170,8 @@ public:
 	virtual void receiveMidi(const giada::m::MidiEvent& midiEvent) {};
 
 	/* allocBuffers
-	Mandatory method to allocate memory for internal buffers. Call it after the
-	object has been constructed. */
+	Method to allocate memory for internal buffers. Call it after the object has 
+	been constructed. */
 
 	virtual bool allocBuffers(int bufferSize);
 
