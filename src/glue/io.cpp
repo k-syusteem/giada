@@ -198,20 +198,6 @@ int stopInputRec(bool gui)
 	
 	mh::stopInputRec();
 
-	/* Start all sample channels in loop mode that were armed, i.e. that were
-	recording stuff and not yet in play. They are also started in force mode, i.e.
-	they must start playing right away at the current frame, not at the next first
-	beat. */
-
-	for (Channel* ch : mixer::channels) {
-		if (ch->type == G_CHANNEL_MIDI)
-			continue;
-		SampleChannel* sch = static_cast<SampleChannel*>(ch);
-		if (sch->mode & (LOOP_ANY) && sch->status == STATUS_OFF && sch->armed)
-			sch->start(clock::getCurrentFrame(), true, clock::getQuantize(),
-				clock::isRunning(), true, true, false, 0);
-	}
-
 	Fl::lock();
 		if (!gui)
 			G_MainWin->mainTransport->updateRecInput(0);

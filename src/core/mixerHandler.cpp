@@ -338,6 +338,10 @@ void stopInputRec()
 	mixer::mergeVirtualInput();
 	mixer::recording = false;
 	mixer::waitRec = 0; // in case delay compensation is in use
+
+	for (Channel* ch : mixer::channels)
+		ch->stopInputRec(clock::getCurrentFrame(), clock::getQuantize(), clock::isRunning());
+
 	gu_log("[mh] stop input recs\n");
 }
 

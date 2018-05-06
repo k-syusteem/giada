@@ -246,6 +246,20 @@ void SampleChannel::stopReadingActions(bool isClockRunning, bool treatRecsAsLoop
 /* -------------------------------------------------------------------------- */
 
 
+void SampleChannel::stopInputRec(int globalFrame, int quantize, bool mixerIsRunning)
+{
+	/* Start all sample channels in loop mode that were armed, i.e. that were
+	recording stuff and not yet in play. They are also started in force mode, i.e.
+	they must start playing right away at the current frame, not at the next first
+	beat. */
+	if (mode & LOOP_ANY && status == STATUS_OFF && armed)
+		start(globalFrame, true, quantize, mixerIsRunning, true, true, false, 0);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 void SampleChannel::setMute(bool isUserGenerated)
 {
 	audioProc::setMute(this, isUserGenerated);

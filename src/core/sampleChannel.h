@@ -79,6 +79,7 @@ public:
   void readPatch(const std::string& basePath, int i) override;
 	void writePatch(int i, bool isProject) override;
 	bool canInputRec() override;
+	void stopInputRec(int globalFrame, int quantize, bool mixerIsRunning) override;
 	bool allocBuffers() override;
 
 	float getBoost() const;	

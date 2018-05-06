@@ -111,11 +111,6 @@ public:
 	virtual void kill(int localFrame) = 0;
 	virtual void manualKill() = 0;
 
-	virtual void startReadingActions(bool treatRecsAsLoops, 
-		bool recsStopOnChanHalt) {};
-	virtual void stopReadingActions(bool isClockRunning, bool treatRecsAsLoops, 
-		bool recsStopOnChanHalt)  {};
-
 	/* set/unsetMute
 	What to do when channel is muted. */
 
@@ -150,6 +145,13 @@ public:
 
 	virtual bool canInputRec() = 0;
 
+	virtual void startReadingActions(bool treatRecsAsLoops, 
+		bool recsStopOnChanHalt) {};
+	virtual void stopReadingActions(bool isClockRunning, bool treatRecsAsLoops, 
+		bool recsStopOnChanHalt)  {};
+
+	virtual void stopInputRec(int globalFrame, int quantize, bool mixerIsRunning) {};
+	
 	/* readPatch
 	Fills channel with data from patch. */
 
