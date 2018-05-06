@@ -34,7 +34,7 @@ void rewind(SampleChannel* ch, int localFrame)
 	ch->mute_i  = false;
 	ch->qWait   = false;  // Was in qWait mode? Reset occured, no more qWait now.
 
-	/* On reset, if frame > 0 and in play, fill again pChan to create something 
+	/* On reset, if frame > 0 and in play, fill again buffer to create something 
 	like this:
 
 		|abcdefabcdefab*abcdefabcde|
@@ -602,7 +602,6 @@ void fillBuffer(SampleChannel* ch)
 	 * but it would require extra clearPChan calls when samples stop */
 
 	ch->buffer.clear();
-	ch->pChan.clear();
 
 	if (ch->status & (STATUS_PLAY | STATUS_ENDING))
 		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, 0);
@@ -672,17 +671,17 @@ void process(SampleChannel* ch, m::AudioBuffer& out, const m::AudioBuffer& in)
 
 
 	if (ch->previewMode != G_PREVIEW_NONE) {
-		ch->vChanPreview.clear();
+		ch->bufferPreview.clear();
 
 		/* If the tracker exceedes the end point and preview is looped, split the 
 		rendering as in SampleChannel::reset(). */
 
 		if (ch->trackerPreview + ch->buffer.countFrames() >= ch->end) {
 			int offset = ch->end - ch->trackerPreview;
-			ch->trackerPreview = fillBuffer(ch, ch->vChanPreview, ch->trackerPreview, 0, false);
+			ch->trackerPreview = fillBuffer(ch, ch->bufferPreview, ch->trackerPreview, 0, false);
 			ch->trackerPreview = ch->begin;
 			if (ch->previewMode == G_PREVIEW_LOOP)
-				ch->trackerPreview = fillBuffer(ch, ch->vChanPreview, ch->begin, offset, false);
+				ch->trackerPreview = fillBuffer(ch, ch->bufferPreview, ch->begin, offset, false);
 			else
 			if (ch->previewMode == G_PREVIEW_NORMAL) {
 				ch->previewMode = G_PREVIEW_NONE;
@@ -691,11 +690,11 @@ void process(SampleChannel* ch, m::AudioBuffer& out, const m::AudioBuffer& in)
 			}
 		}
 		else
-			ch->trackerPreview = fillBuffer(ch, ch->vChanPreview, ch->trackerPreview, 0, false);
+			ch->trackerPreview = fillBuffer(ch, ch->bufferPreview, ch->trackerPreview, 0, false);
 
 		for (int i=0; i<out.countFrames(); i++)
 			for (int j=0; j<out.countChannels(); j++)
-				out[i][j] += ch->vChanPreview[i][j] * ch->volume * ch->calcPanning(j) * ch->boost;
+				out[i][j] += ch->bufferPreview[i][j] * ch->volume * ch->calcPanning(j) * ch->boost;
 	}
 	/* preview */	
 	/* preview */

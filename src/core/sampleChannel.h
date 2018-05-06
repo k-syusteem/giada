@@ -115,15 +115,10 @@ public:
 
 	std::function<void()> onPreviewEnd;
 
-	/* pChan
-	Extra virtual channel for processing resampled data. */
+	/* bufferPreview
+	Extra buffer for audio preview. */
 
-	giada::m::AudioBuffer pChan;
-
-	/* vChanPreview
-	Extra virtual channel for audio preview. */
-
-	giada::m::AudioBuffer vChanPreview;
+	giada::m::AudioBuffer bufferPreview;
 	
 	Wave* wave;
 	int   tracker;         // chan position

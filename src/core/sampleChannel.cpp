@@ -99,13 +99,8 @@ bool SampleChannel::allocBuffers(int bufferSize)
 		return false;
 	}
 
-	if (!pChan.alloc(bufferSize, G_MAX_IO_CHANS)) {
-		gu_log("[SampleChannel::allocBuffers] unable to alloc memory for pChan!\n");
-		return false;
-	}
-
-	if (!vChanPreview.alloc(bufferSize, G_MAX_IO_CHANS)) {
-		gu_log("[SampleChannel::allocBuffers] unable to alloc memory for vChanPreview!\n");
+	if (!bufferPreview.alloc(bufferSize, G_MAX_IO_CHANS)) {
+		gu_log("[SampleChannel::allocBuffers] unable to alloc memory for bufferPreview!\n");
 		return false;
 	}
 
