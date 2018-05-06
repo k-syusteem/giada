@@ -44,10 +44,8 @@ class MidiChannel : public Channel
 public:
 
 	MidiChannel();
-	~MidiChannel();
 
 	void copy(const Channel* src, pthread_mutex_t* pluginMutex) override;
-	void fillBuffer() override;
 	void parseEvents(giada::m::mixer::FrameEvents fe, size_t index) override;
 	void process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in) override;
 	void start(int localFrame, bool doQuantize, int quantize, bool mixerIsRunning,

@@ -132,12 +132,6 @@ public:
 
 	virtual void rewind() = 0;
 
-	/* fillBuffer
-	Fill audio buffer with audio data from the internal source. This is actually 
-	useful to sample channels only. */
-
-	virtual void fillBuffer() = 0;
-
 	/* canInputRec
 	Tells whether a channel can accept and handle input audio. Always false for
 	Midi channels, true for Sample channels only if they don't contain a
@@ -145,10 +139,17 @@ public:
 
 	virtual bool canInputRec() = 0;
 
+
+	/* fillBuffer
+	Fill audio buffer with audio data from the internal source. This is actually 
+	useful to sample channels only. */
+
+	virtual void fillBuffer() {};
+
 	virtual void startReadingActions(bool treatRecsAsLoops, 
 		bool recsStopOnChanHalt) {};
 	virtual void stopReadingActions(bool isClockRunning, bool treatRecsAsLoops, 
-		bool recsStopOnChanHalt)  {};
+		bool recsStopOnChanHalt) {};
 
 	virtual void stopInputRec(int globalFrame, int quantize, bool mixerIsRunning) {};
 	
@@ -212,7 +213,11 @@ public:
 
 #endif
 
-  geChannel* guiChannel;        // pointer to a gChannel object, part of the GUI
+	/* guiChannel
+	Pointer to a gChannel object, part of the GUI. TODO - remove this and send
+	signals instead. */
+
+  geChannel* guiChannel;
 
 	/* buffer
 	Working buffer for internal processing. */
@@ -242,7 +247,7 @@ public:
 	float volume_i;
 	float volume_d;
 
-	bool mute_i;                // internal mute
+	bool mute_i;          // internal mute
 	
   bool hasActions;      // has something recorded
   bool readActions;     // read what's recorded

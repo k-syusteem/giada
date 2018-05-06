@@ -54,12 +54,6 @@ MidiChannel::MidiChannel()
 /* -------------------------------------------------------------------------- */
 
 
-MidiChannel::~MidiChannel() {}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 void MidiChannel::copy(const Channel* src_, pthread_mutex_t* pluginMutex)
 {
 	Channel::copy(src_, pluginMutex);
@@ -273,9 +267,3 @@ bool MidiChannel::canInputRec()
 {
 	return false; // midi channels don't handle input audio
 }
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void MidiChannel::fillBuffer() {}
