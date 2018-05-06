@@ -41,7 +41,7 @@ void rewind(SampleChannel* ch, int localFrame)
 		[old data-----]*[new data--] */
 
 	if (localFrame > 0 && ch->status & (STATUS_PLAY | STATUS_ENDING))
-		ch->tracker = fillBuffer(ch, ch->vChan, ch->tracker, localFrame);
+		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, localFrame);
 }
 
 
@@ -53,7 +53,7 @@ Stops the channel immediately, no further checks. */
 void hardStop(SampleChannel* ch, int localFrame)
 {
 	if (localFrame != 0)        
-		ch->vChan.clear(localFrame); // clear data in range [localFrame, [end]]
+		ch->buffer.clear(localFrame); // clear data in range [localFrame, [end]]
 	ch->status = STATUS_OFF;
 	ch->sendMidiLplay();/* MIDI TODO ********** */
 	rewind(ch, localFrame);
@@ -81,7 +81,7 @@ void quantize(SampleChannel* ch, int index, int localFrame, int globalFrame)
 		ch->status  = STATUS_PLAY;
 		ch->sendMidiLplay(); /* MIDI TODO ********** */
 		ch->qWait   = false;
-		ch->tracker = fillBuffer(ch, ch->vChan, ch->tracker, localFrame); /// FIXME: ???
+		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, localFrame); /// FIXME: ???
 	}
 	else
 		rewind(ch, localFrame);
@@ -115,7 +115,7 @@ void onBar(SampleChannel* ch, int localFrame)
 	if (ch->mode == LOOP_ONCE_BAR) {
 		if (ch->status == STATUS_WAIT) {
 			ch->status  = STATUS_PLAY;
-			ch->tracker = fillBuffer(ch, ch->vChan, ch->tracker, localFrame);
+			ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, localFrame);
 			ch->sendMidiLplay(); /* MIDI TODO ********** */
 		}
 	}	
@@ -145,7 +145,7 @@ void onFirstBeat(SampleChannel* ch, int localFrame)
 	if (ch->status == STATUS_WAIT) { /// FIXME - should be inside previous if!
 		ch->status  = STATUS_PLAY;
 		ch->sendMidiLplay(); /* MIDI TODO ********** */
-		ch->tracker = fillBuffer(ch, ch->vChan, ch->tracker, localFrame);
+		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, localFrame);
 	}
 
 	if (ch->recStatus == REC_ENDING) {
@@ -258,14 +258,14 @@ void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 		 * volume envelope. */
 
 		if (ch->mute || ch->mute_i) {
-			for (int i=0; i<ch->vChan.countChannels(); i++)
-				ch->vChan[localFrame][i] = 0.0f;
+			for (int i=0; i<ch->buffer.countChannels(); i++)
+				ch->buffer[localFrame][i] = 0.0f;
 		}
 		else
 		if (ch->fadeinOn) {
 			if (ch->fadeinVol < 1.0f) {
-				for (int i=0; i<ch->vChan.countChannels(); i++)
-					ch->vChan[localFrame][i] *= ch->fadeinVol * ch->volume_i;
+				for (int i=0; i<ch->buffer.countChannels(); i++)
+					ch->buffer[localFrame][i] *= ch->fadeinVol * ch->volume_i;
 				ch->fadeinVol += 0.01f;
 			}
 			else {
@@ -277,12 +277,12 @@ void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 		if (ch->fadeoutOn) {
 			if (ch->fadeoutVol > 0.0f) { // fadeout ongoing
 				if (ch->fadeoutType == SampleChannel::XFADE) {
-					for (int i=0; i<ch->vChan.countChannels(); i++)
-						ch->vChan[localFrame][i] = ch->pChan[localFrame][i] * ch->fadeoutVol * ch->volume_i;
+					for (int i=0; i<ch->buffer.countChannels(); i++)
+						ch->buffer[localFrame][i] = ch->pChan[localFrame][i] * ch->fadeoutVol * ch->volume_i;
 				}
 				else {
-					for (int i=0; i<ch->vChan.countChannels(); i++)
-						ch->vChan[localFrame][i] *= ch->fadeoutVol * ch->volume_i;
+					for (int i=0; i<ch->buffer.countChannels(); i++)
+						ch->buffer[localFrame][i] *= ch->fadeoutVol * ch->volume_i;
 				}
 				ch->fadeoutVol -= ch->fadeoutStep;
 			}
@@ -307,8 +307,8 @@ void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 			}
 		}
 		else {
-			for (int i=0; i<ch->vChan.countChannels(); i++)
-				ch->vChan[localFrame][i] *= ch->volume_i;
+			for (int i=0; i<ch->buffer.countChannels(); i++)
+				ch->buffer[localFrame][i] *= ch->volume_i;
 		}
 	}
 	else { // at this point the sample has reached the end */
@@ -670,7 +670,7 @@ void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart,
 					fillChan on the next cycle. */
 
 					if (!isUserGenerated)
-						ch->tracker = fillBuffer(ch, ch->vChan, ch->tracker, localFrame);
+						ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, localFrame);
 				}
 			}
 			break;
@@ -717,11 +717,11 @@ void fillBuffer(SampleChannel* ch)
 	/** TODO - these clear() may be done only if status PLAY | ENDING (if below),
 	 * but it would require extra clearPChan calls when samples stop */
 
-	ch->vChan.clear();
+	ch->buffer.clear();
 	ch->pChan.clear();
 
 	if (ch->status & (STATUS_PLAY | STATUS_ENDING)) {
-		ch->tracker = fillBuffer(ch, ch->vChan, ch->tracker, 0);
+		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, 0);
 		if (ch->fadeoutOn && ch->fadeoutType == SampleChannel::XFADE)
 			ch->fadeoutTracker = fillBuffer(ch, ch->pChan, ch->fadeoutTracker, 0);
 	}	
@@ -758,8 +758,8 @@ void process(SampleChannel* ch, m::AudioBuffer& out, const m::AudioBuffer& in)
 	/* normal play */
 	if (mixer::isChannelAudible(ch))
 	{
-		assert(out.countSamples() == ch->vChan.countSamples());
-		assert(in.countSamples()  == ch->vChan.countSamples());
+		assert(out.countSamples() == ch->buffer.countSamples());
+		assert(in.countSamples()  == ch->buffer.countSamples());
 
 		/* If armed and inbuffer is not nullptr (i.e. input device available) and
 		input monitor is on, copy input buffer to vChan: this enables the input
@@ -767,17 +767,17 @@ void process(SampleChannel* ch, m::AudioBuffer& out, const m::AudioBuffer& in)
 		so that you would record "clean" audio (i.e. not plugin-processed). */
 
 		if (ch->armed && in.isAllocd() && ch->inputMonitor)
-			for (int i=0; i<ch->vChan.countFrames(); i++)
-				for (int j=0; j<ch->vChan.countChannels(); j++)
-					ch->vChan[i][j] += in[i][j];   // add, don't overwrite
+			for (int i=0; i<ch->buffer.countFrames(); i++)
+				for (int j=0; j<ch->buffer.countChannels(); j++)
+					ch->buffer[i][j] += in[i][j];   // add, don't overwrite
 
 	#ifdef WITH_VST
-		pluginHost::processStack(ch->vChan, pluginHost::CHANNEL, ch);
+		pluginHost::processStack(ch->buffer, pluginHost::CHANNEL, ch);
 	#endif
 
 			for (int i=0; i<out.countFrames(); i++)
 				for (int j=0; j<out.countChannels(); j++)
-					out[i][j] += ch->vChan[i][j] * ch->volume * ch->calcPanning(j) * ch->boost;
+					out[i][j] += ch->buffer[i][j] * ch->volume * ch->calcPanning(j) * ch->boost;
 	}
 	/* normal play */
 	/* normal play */

@@ -64,13 +64,13 @@ void parseEvents(MidiChannel* ch, mixer::FrameEvents fe, size_t chanIndex)
 void process(MidiChannel* ch, giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in)
 {
 	#ifdef WITH_VST
-		pluginHost::processStack(ch->vChan, pluginHost::CHANNEL, ch);
+		pluginHost::processStack(ch->buffer, pluginHost::CHANNEL, ch);
 	#endif
 
 		/* TODO - isn't this useful only if WITH_VST ? */
 		for (int i=0; i<out.countFrames(); i++)
 			for (int j=0; j<out.countChannels(); j++)
-				out[i][j] += ch->vChan[i][j] * ch->volume;	
+				out[i][j] += ch->buffer[i][j] * ch->volume;	
 }
 
 

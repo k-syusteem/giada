@@ -75,7 +75,7 @@ public:
 	virtual ~Channel();
 
 	/* copy
-	Makes a shallow copy (no vChan/pChan allocation) of another channel. */
+	Makes a shallow copy (no internal buffers allocation) of another channel. */
 
 	virtual void copy(const Channel* src, pthread_mutex_t* pluginMutex) = 0;
 
@@ -85,7 +85,7 @@ public:
 	virtual void parseEvents(giada::m::mixer::FrameEvents fe, size_t index) = 0;
 
 	/* process
-	Merges vChannels into buffer, plus plugin processing (if any). Warning:
+	Merges working buffers into 'out', plus plugin processing (if any). Warning:
 	inBuffer might be nullptr if no input devices are available for recording. */
 
 	virtual void process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in) = 0;
@@ -213,16 +213,17 @@ public:
 #endif
 
 	/* bufferSize
-	Size of every buffer in this channel (vChan, pChan) */
+	Size of every working buffer in this channel. */
+	/* TODO USELESS, use buffer.getSize() */
 
 	int bufferSize;
 
   geChannel* guiChannel;        // pointer to a gChannel object, part of the GUI
 
-	/* vChan
-	Virtual channel for internal processing. */
+	/* buffer
+	Working buffer for internal processing. */
 	
-	giada::m::AudioBuffer vChan;
+	giada::m::AudioBuffer buffer;
 
 	/* previewMode
 	Whether the channel is in audio preview mode or not. */

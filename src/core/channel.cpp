@@ -99,8 +99,8 @@ Channel::~Channel()
 
 bool Channel::allocBuffers()
 {
-	if (!vChan.alloc(bufferSize, G_MAX_IO_CHANS)) {
-		gu_log("[Channel::allocBuffers] unable to alloc memory for vChan!\n");
+	if (!buffer.alloc(bufferSize, G_MAX_IO_CHANS)) {
+		gu_log("[Channel::allocBuffers] unable to alloc memory for internal buffer!\n");
 		return false;
 	}
 	return true;
