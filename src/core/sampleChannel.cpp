@@ -32,7 +32,7 @@
 #include "../utils/fs.h"
 #include "../utils/string.h"
 #include "patch.h"
-#include "audioProc.h"
+#include "sampleChannelProc.h"
 #include "channelManager.h"
 #include "const.h"
 #include "conf.h"
@@ -133,7 +133,7 @@ void SampleChannel::copy(const Channel* src_, pthread_mutex_t* pluginMutex)
 
 void SampleChannel::parseEvents(mixer::FrameEvents fe, size_t index)
 {
-	audioProc::parseEvents(this, fe, index);
+	sampleChannelProc::parseEvents(this, fe, index);
 }
 
 
@@ -142,7 +142,7 @@ void SampleChannel::parseEvents(mixer::FrameEvents fe, size_t index)
 
 void SampleChannel::fillBuffer()
 {
-	audioProc::fillBuffer(this);
+	sampleChannelProc::fillBuffer(this);
 }
 
 
@@ -152,7 +152,7 @@ void SampleChannel::fillBuffer()
 
 void SampleChannel::rewindBySeq()
 {
-	audioProc::rewindBySeq(this);
+	sampleChannelProc::rewindBySeq(this);
 }
 
 
@@ -163,7 +163,7 @@ void SampleChannel::start(int localFrame, bool doQuantize, int quantize,
 		bool mixerIsRunning, bool forceStart, bool isUserGenerated, bool record,
 		int velocity)
 {
-	audioProc::start(this, localFrame, doQuantize, forceStart, isUserGenerated,
+	sampleChannelProc::start(this, localFrame, doQuantize, forceStart, isUserGenerated,
 		record, velocity);
 }
 
@@ -173,7 +173,7 @@ void SampleChannel::start(int localFrame, bool doQuantize, int quantize,
 
 void SampleChannel::stop(bool isUserGenerated)
 {
-	audioProc::stop(this, isUserGenerated);
+	sampleChannelProc::stop(this, isUserGenerated);
 }
 
 
@@ -182,7 +182,7 @@ void SampleChannel::stop(bool isUserGenerated)
 
 void SampleChannel::stopBySeq(bool chansStopOnSeqHalt)
 {
-	audioProc::stopBySeq(this, chansStopOnSeqHalt);
+	sampleChannelProc::stopBySeq(this, chansStopOnSeqHalt);
 }
 
 
@@ -191,7 +191,7 @@ void SampleChannel::stopBySeq(bool chansStopOnSeqHalt)
 
 void SampleChannel::kill(int localFrame)
 {
-	audioProc::kill(this, localFrame);
+	sampleChannelProc::kill(this, localFrame);
 }
 
 
@@ -200,7 +200,7 @@ void SampleChannel::kill(int localFrame)
 
 void SampleChannel::manualKill()
 {
-	audioProc::manualKill(this);
+	sampleChannelProc::manualKill(this);
 }
 
 
@@ -209,7 +209,7 @@ void SampleChannel::manualKill()
 
 void SampleChannel::startReadingActions(bool treatRecsAsLoops, bool recsStopOnChanHalt)
 {
-	audioProc::startReadingActions(this, treatRecsAsLoops, recsStopOnChanHalt);
+	sampleChannelProc::startReadingActions(this, treatRecsAsLoops, recsStopOnChanHalt);
 }
 
 
@@ -219,7 +219,7 @@ void SampleChannel::startReadingActions(bool treatRecsAsLoops, bool recsStopOnCh
 void SampleChannel::stopReadingActions(bool isClockRunning, bool treatRecsAsLoops, 
 		bool recsStopOnChanHalt)
 {
-	audioProc::stopReadingActions(this, isClockRunning, treatRecsAsLoops, 
+	sampleChannelProc::stopReadingActions(this, isClockRunning, treatRecsAsLoops, 
 		recsStopOnChanHalt);
 }
 
@@ -243,7 +243,7 @@ void SampleChannel::stopInputRec(int globalFrame, int quantize, bool mixerIsRunn
 
 void SampleChannel::setMute(bool isUserGenerated)
 {
-	audioProc::setMute(this, isUserGenerated);
+	sampleChannelProc::setMute(this, isUserGenerated);
 }
 
 
@@ -252,7 +252,7 @@ void SampleChannel::setMute(bool isUserGenerated)
 
 void SampleChannel::unsetMute(bool isUserGenerated)
 {
-	audioProc::unsetMute(this, isUserGenerated);
+	sampleChannelProc::unsetMute(this, isUserGenerated);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -260,7 +260,7 @@ void SampleChannel::unsetMute(bool isUserGenerated)
 
 void SampleChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in)
 {
-	audioProc::process(this, out, in);
+	sampleChannelProc::process(this, out, in);
 }
 
 
@@ -289,7 +289,7 @@ void SampleChannel::writePatch(int i, bool isProject)
 
 void SampleChannel::setReadActions(bool v, bool recsStopOnChanHalt)
 {
-	audioProc::setReadActions(this, v, recsStopOnChanHalt);
+	sampleChannelProc::setReadActions(this, v, recsStopOnChanHalt);
 }
 
 
@@ -412,7 +412,7 @@ void SampleChannel::empty()
   volume     = G_DEFAULT_VOL;
   boost      = G_DEFAULT_BOOST;
   hasActions = false;
-	audioProc::empty(this);
+	sampleChannelProc::empty(this);
 }
 
 
@@ -469,6 +469,6 @@ int SampleChannel::fillBuffer(giada::m::AudioBuffer& dest, int start, int offset
 /* -------------------------------------------------------------------------- */
 
 
-void SampleChannel::reset(int frame) // audioProc::rewind
+void SampleChannel::reset(int frame) // sampleChannelProc::rewind
 {
 }

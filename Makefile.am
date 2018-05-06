@@ -161,10 +161,10 @@ src/core/waveManager.h                 \
 src/core/waveManager.cpp               \
 src/core/channelManager.h              \
 src/core/channelManager.cpp            \
-src/core/audioProc.h                   \
-src/core/audioProc.cpp                 \
-src/core/midiProc.h                    \
-src/core/midiProc.cpp                  \
+src/core/sampleChannelProc.h           \
+src/core/sampleChannelProc.cpp         \
+src/core/midiChannelProc.h             \
+src/core/midiChannelProc.cpp           \
 src/glue/main.h                        \
 src/glue/main.cpp                      \
 src/glue/io.h                          \

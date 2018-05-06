@@ -26,7 +26,7 @@
 
 
 #include "../utils/log.h"
-#include "midiProc.h"
+#include "midiChannelProc.h"
 #include "channelManager.h"
 #include "channel.h"
 #include "patch.h"
@@ -68,7 +68,7 @@ void MidiChannel::copy(const Channel* src_, pthread_mutex_t* pluginMutex)
 
 void MidiChannel::parseEvents(mixer::FrameEvents fe, size_t index)
 {
-	midiProc::parseEvents(this, fe, index);
+	midiChannelProc::parseEvents(this, fe, index);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -76,7 +76,7 @@ void MidiChannel::parseEvents(mixer::FrameEvents fe, size_t index)
 
 void MidiChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuffer& in)
 {
-	midiProc::process(this, out, in);
+	midiChannelProc::process(this, out, in);
 }
 
 
@@ -85,7 +85,7 @@ void MidiChannel::process(giada::m::AudioBuffer& out, const giada::m::AudioBuffe
 
 void MidiChannel::stopBySeq(bool chansStopOnSeqHalt)
 {
-	midiProc::stopBySeq(this);
+	midiChannelProc::stopBySeq(this);
 }
 
 
@@ -96,7 +96,7 @@ void MidiChannel::start(int frame, bool doQuantize, int quantize,
 		bool mixerIsRunning, bool forceStart, bool isUserGenerated, bool record,
 		int velocity)
 {
-	midiProc::start(this);
+	midiChannelProc::start(this);
 }
 
 
@@ -105,7 +105,7 @@ void MidiChannel::start(int frame, bool doQuantize, int quantize,
 
 void MidiChannel::kill(int localFrame)
 {
-	midiProc::kill(this, localFrame);
+	midiChannelProc::kill(this, localFrame);
 }
 
 
@@ -114,7 +114,7 @@ void MidiChannel::kill(int localFrame)
 
 void MidiChannel::manualKill()
 {
-	midiProc::kill(this, 0);
+	midiChannelProc::kill(this, 0);
 }
 
 
@@ -123,7 +123,7 @@ void MidiChannel::manualKill()
 
 void MidiChannel::rewindBySeq()
 {
-	midiProc::rewindBySeq(this);
+	midiChannelProc::rewindBySeq(this);
 }
 
 
@@ -132,7 +132,7 @@ void MidiChannel::rewindBySeq()
 
 void MidiChannel::setMute(bool isUserGenerated)
 {
-	midiProc::mute(this);
+	midiChannelProc::mute(this);
 }
 
 
@@ -141,7 +141,7 @@ void MidiChannel::setMute(bool isUserGenerated)
 
 void MidiChannel::unsetMute(bool isUserGenerated)
 {
-	midiProc::unmute(this);
+	midiChannelProc::unmute(this);
 }
 
 

@@ -46,7 +46,6 @@
 #include "../utils/gui.h"
 #include "../utils/fs.h"
 #include "../utils/log.h"
-#include "../core/audioProc.h"
 #include "../core/kernelAudio.h"
 #include "../core/mixerHandler.h"
 #include "../core/mixer.h"
