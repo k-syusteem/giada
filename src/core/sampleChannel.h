@@ -81,12 +81,12 @@ public:
 	int   getEnd() const;
 	float getPitch() const;
 
-	/* fillChan
-	Fills 'dest' buffer at point 'offset' with wave data taken from 'start'. If 
-	rewind=false don't rewind internal tracker. Returns new sample position, 
+	/* fillBuffer
+	Fills 'dest' buffer at point 'offset' with Wave data taken from 'start'. If 
+	doRewind=false don't rewind internal tracker. Returns new sample position, 
 	in frames. It resamples data if pitch != 1.0f. */
 
-	int fillChan(giada::m::AudioBuffer& dest, int start, int offset, bool rewind=true);
+	int fillBuffer(giada::m::AudioBuffer& dest, int start, int offset, bool doRewind);
 
 	/* reset
 	Rewinds tracker to the beginning of the sample. */
