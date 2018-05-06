@@ -18,16 +18,6 @@ namespace audioProc
 {
 namespace
 {
-int fillBuffer(SampleChannel* ch, giada::m::AudioBuffer& dest, int start, 
-	int offset, bool rewind=true)
-{
-	return ch->fillChan(dest, start, offset, rewind);
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 void rewind(SampleChannel* ch, int localFrame)
 {
 	ch->tracker = ch->begin;
@@ -41,7 +31,7 @@ void rewind(SampleChannel* ch, int localFrame)
 		[old data-----]*[new data--] */
 
 	if (localFrame > 0 && ch->isPlaying())
-		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, localFrame);
+		ch->tracker = ch->fillChan(ch->buffer, ch->tracker, localFrame, false); 
 }
 
 
@@ -83,7 +73,7 @@ void quantize(SampleChannel* ch, int index, int localFrame, int globalFrame)
 		ch->status  = STATUS_PLAY;
 		ch->sendMidiLplay(); /* MIDI TODO ********** */
 		ch->qWait   = false;
-		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, localFrame); /// FIXME: ???
+		ch->tracker = ch->fillChan(ch->buffer, ch->tracker, localFrame, true);  /// FIXME: ???
 	}
 	else
 		rewind(ch, localFrame);
@@ -117,7 +107,7 @@ void onBar(SampleChannel* ch, int localFrame)
 	if (ch->mode == LOOP_ONCE_BAR) {
 		if (ch->status == STATUS_WAIT) {
 			ch->status  = STATUS_PLAY;
-			ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, localFrame);
+			ch->tracker = ch->fillChan(ch->buffer, ch->tracker, localFrame, true);
 			ch->sendMidiLplay(); /* MIDI TODO ********** */
 		}
 	}	
@@ -133,10 +123,6 @@ void onFirstBeat(SampleChannel* ch, int localFrame)
 		return;
 
 	if (ch->mode & LOOP_ANY) {
-
-		/* FIXME - Should do a crossfade if the sample is playing. Regular ch->reset
-		instead if it's muted, otherwise a click occurs. */
-
 		if (ch->status == STATUS_PLAY)
 			rewind(ch, localFrame);
 		else
@@ -147,7 +133,7 @@ void onFirstBeat(SampleChannel* ch, int localFrame)
 	if (ch->status == STATUS_WAIT) { /// FIXME - should be inside previous if!
 		ch->status  = STATUS_PLAY;
 		ch->sendMidiLplay(); /* MIDI TODO ********** */
-		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, localFrame);
+		ch->tracker = ch->fillChan(ch->buffer, ch->tracker, localFrame, true);
 	}
 
 	if (ch->recStatus == REC_ENDING) {
@@ -209,7 +195,7 @@ void parseAction(SampleChannel* ch, const recorder::action* a, int localFrame,
 	switch (a->type) {
 		case G_ACTION_KEYPRESS:
 			if (ch->mode & SINGLE_ANY)
-				start(ch, localFrame, false, false, false, false, -1);
+				start(ch, localFrame, false, false, false, false, 0);
 			break;
 		case G_ACTION_KEYREL:
 			if (ch->mode & SINGLE_ANY)
@@ -237,7 +223,7 @@ void parseAction(SampleChannel* ch, const recorder::action* a, int localFrame,
 
 void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 {
-	if (ch->wave == nullptr || !ch->status->isPlaying())
+	if (ch->wave == nullptr || !ch->isPlaying())
 		return;
 
 	if (localFrame != ch->frameRewind) {
@@ -262,7 +248,7 @@ void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 
 		/* Check for end of samples. SINGLE_ENDLESS runs forever unless it's in 
 		ENDING mode. */
-	
+
 		if (ch->mode & (SINGLE_BASIC | SINGLE_PRESS | SINGLE_RETRIG) ||
 			 (ch->mode == SINGLE_ENDLESS && ch->status == STATUS_ENDING)   ||
 			 (ch->mode & LOOP_ANY && !isClockRunning))     // stop loops when the seq is off
@@ -557,7 +543,7 @@ void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart,
 					fillChan on the next cycle. */
 
 					if (!isUserGenerated)
-						ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, localFrame);
+						ch->tracker = ch->fillChan(ch->buffer, ch->tracker, localFrame, true);
 				}
 			}
 			break;
@@ -599,9 +585,8 @@ void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart,
 void fillBuffer(SampleChannel* ch)
 {
 	ch->buffer.clear();
-
 	if (ch->isPlaying())
-		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, 0);
+		ch->tracker = ch->fillChan(ch->buffer, ch->tracker, 0, true);
 }
 
 
@@ -675,10 +660,10 @@ void process(SampleChannel* ch, m::AudioBuffer& out, const m::AudioBuffer& in)
 
 		if (ch->trackerPreview + ch->buffer.countFrames() >= ch->end) {
 			int offset = ch->end - ch->trackerPreview;
-			ch->trackerPreview = fillBuffer(ch, ch->bufferPreview, ch->trackerPreview, 0, false);
+			ch->trackerPreview = ch->fillChan(ch->bufferPreview, ch->trackerPreview, 0, false);
 			ch->trackerPreview = ch->begin;
 			if (ch->previewMode == G_PREVIEW_LOOP)
-				ch->trackerPreview = fillBuffer(ch, ch->bufferPreview, ch->begin, offset, false);
+				ch->trackerPreview = ch->fillChan(ch->bufferPreview, ch->begin, offset, false);
 			else
 			if (ch->previewMode == G_PREVIEW_NORMAL) {
 				ch->previewMode = G_PREVIEW_NONE;
@@ -687,7 +672,7 @@ void process(SampleChannel* ch, m::AudioBuffer& out, const m::AudioBuffer& in)
 			}
 		}
 		else
-			ch->trackerPreview = fillBuffer(ch, ch->bufferPreview, ch->trackerPreview, 0, false);
+			ch->trackerPreview = ch->fillChan(ch->bufferPreview, ch->trackerPreview, 0, false);
 
 		for (int i=0; i<out.countFrames(); i++)
 			for (int j=0; j<out.countChannels(); j++)

@@ -87,15 +87,6 @@ Channel::Channel(int type, int status)
 /* -------------------------------------------------------------------------- */
 
 
-Channel::~Channel()
-{
-	status = STATUS_OFF;
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
 bool Channel::allocBuffers(int bufferSize)
 {
 	if (!buffer.alloc(bufferSize, G_MAX_IO_CHANS)) {
@@ -252,14 +243,6 @@ void Channel::sendMidiLplay()
 		case STATUS_ENDING:
 			sendMidiLmessage(midiOutLplaying, midimap::stopping);
 	}
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void Channel::receiveMidi(const MidiEvent& midiEvent)
-{
 }
 
 

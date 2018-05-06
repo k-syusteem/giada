@@ -72,7 +72,7 @@ protected:
 	
 public:
 
-	virtual ~Channel();
+	virtual ~Channel() {};
 
 	/* copy
 	Makes a shallow copy (no internal buffers allocation) of another channel. */
@@ -167,7 +167,7 @@ public:
 	/* receiveMidi
 	Receives and processes midi messages from external devices. */
 
-	virtual void receiveMidi(const giada::m::MidiEvent& midiEvent);
+	virtual void receiveMidi(const giada::m::MidiEvent& midiEvent) {};
 
 	/* allocBuffers
 	Mandatory method to allocate memory for internal buffers. Call it after the
