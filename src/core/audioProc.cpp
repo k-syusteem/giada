@@ -405,13 +405,53 @@ void manualKill(SampleChannel* ch)
 	else {
 		if (ch->hasActions) {
 			if (m::clock::isRunning() || ch->status == STATUS_OFF)
-				ch->readActions ? c::channel::stopReadingRecs(ch) : c::channel::startReadingRecs(ch);
+				ch->readActions ? c::channel::stopReadingActions(ch) : c::channel::startReadingActions(ch); // TODO !!!
 			else
 				kill(ch, 0);  // on frame 0: user-generated event
 		}
 		else
 			kill(ch, 0);    // on frame 0: user-generated event
 	}
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void startReadingActions(SampleChannel* ch, bool treatRecsAsLoops, bool recsStopOnChanHalt)
+{
+	if (treatRecsAsLoops)
+		ch->recStatus = REC_WAITING;
+	else
+		setReadActions(ch, true, recsStopOnChanHalt);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void stopReadingActions(SampleChannel* ch, bool isClockRunning, bool treatRecsAsLoops, 
+		bool recsStopOnChanHalt)
+{
+	/* First of all, if the clock is not running just stop and disable everything.
+	Then if "treatRecsAsLoop" wait until the sequencer reaches beat 0, so put the
+	channel in REC_ENDING status. */
+
+	if (!isClockRunning) {
+		ch->recStatus = REC_STOPPED;
+		setReadActions(ch, false, false);
+	}
+	else
+	if (ch->recStatus == REC_WAITING)
+		ch->recStatus = REC_STOPPED;
+	else
+	if (ch->recStatus == REC_ENDING)
+		ch->recStatus = REC_READING;
+	else
+	if (treatRecsAsLoops)
+		ch->recStatus = REC_ENDING;
+	else
+		setReadActions(ch, false, recsStopOnChanHalt);
 }
 
 

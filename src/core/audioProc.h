@@ -30,6 +30,10 @@ recsStopOnChanHalt == true and v == false, will also kill the channel. */
 
 void setReadActions(SampleChannel* ch, bool v, bool recsStopOnChanHalt);
 
+void startReadingActions(SampleChannel* ch, bool treatRecsAsLoops, bool recsStopOnChanHalt);
+void stopReadingActions(SampleChannel* ch, bool isClockRunning, bool treatRecsAsLoops, 
+		bool recsStopOnChanHalt);
+
 /* kill
 Stops a channel abruptly. */
 

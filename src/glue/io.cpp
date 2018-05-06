@@ -118,19 +118,16 @@ void startActionRec(bool gui)
 
 void stopActionRec(bool gui)
 {
-	/* stop the recorder and sort new actions */
+	/* Stop the recorder and sort newly recorder actions. */
 
 	m::recorder::active = false;
 	m::recorder::sortActions();
 
 	for (Channel* ch : m::mixer::channels)
 	{
-		if (ch->type == G_CHANNEL_MIDI)
-			continue;
-		SampleChannel* sch = static_cast<SampleChannel*>(ch);
-		G_MainWin->keyboard->setChannelWithActions(static_cast<geSampleChannel*>(sch->guiChannel));
-		if (!sch->readActions && sch->hasActions)
-			c::channel::startReadingRecs(sch, false);
+		G_MainWin->keyboard->setChannelWithActions(static_cast<geSampleChannel*>(ch->guiChannel));
+		if (!ch->readActions && ch->hasActions)
+			c::channel::startReadingActions(ch, false);
 	}
 
 	if (!gui) {

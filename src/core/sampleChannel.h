@@ -67,6 +67,9 @@ public:
 		bool forceStart, bool isUserGenerated, bool record, int velocity) override;
 	void kill(int frame) override;
 	void manualKill() override;
+	void startReadingActions(bool treatRecsAsLoops, bool recsStopOnChanHalt) override;
+	void stopReadingActions(bool isClockRunning, bool treatRecsAsLoops, 
+		bool recsStopOnChanHalt) override;
 	void empty() override;
 	void stopBySeq(bool chansStopOnSeqHalt) override;
 	void stop(bool isUserGenerated) override;

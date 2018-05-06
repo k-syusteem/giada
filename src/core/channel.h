@@ -111,11 +111,16 @@ public:
 	virtual void kill(int localFrame) = 0;
 	virtual void manualKill() = 0;
 
+	virtual void startReadingActions(bool treatRecsAsLoops, 
+		bool recsStopOnChanHalt) {};
+	virtual void stopReadingActions(bool isClockRunning, bool treatRecsAsLoops, 
+		bool recsStopOnChanHalt)  {};
+
 	/* set/unsetMute
 	What to do when channel is muted. */
 
-	virtual void setMute  (bool userGenerated) = 0;
-	virtual void unsetMute(bool userGenerated) = 0;
+	virtual void setMute  (bool isUserGenerated) = 0;
+	virtual void unsetMute(bool isUserGenerated) = 0;
 
 	/* empty
 	Frees any associated resources (e.g. waveform for SAMPLE). */

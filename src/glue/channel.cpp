@@ -350,7 +350,7 @@ void setName(Channel* ch, const string& name)
 /* -------------------------------------------------------------------------- */
 
 
-void toggleReadingRecs(SampleChannel* ch, bool gui)
+void toggleReadingActions(Channel* ch, bool gui)
 {
 
 	/* When you call startReadingRecs with conf::treatRecsAsLoops, the
@@ -362,23 +362,21 @@ void toggleReadingRecs(SampleChannel* ch, bool gui)
 	then you press 'R' again to undo the status. */
 
 	if (ch->readActions || (!ch->readActions && ch->recStatus == REC_WAITING))
-		stopReadingRecs(ch, gui);
+		stopReadingActions(ch, gui);
 	else
-		startReadingRecs(ch, gui);
+		startReadingActions(ch, gui);
 }
 
 
 /* -------------------------------------------------------------------------- */
 
 
-void startReadingRecs(SampleChannel* ch, bool gui)
+void startReadingActions(Channel* ch, bool gui)
 {
 	using namespace giada::m;
 
-	if (conf::treatRecsAsLoops)
-		ch->recStatus = REC_WAITING;
-	else
-		ch->setReadActions(true, conf::recsStopOnChanHalt);
+	ch->startReadingActions(conf::treatRecsAsLoops, conf::recsStopOnChanHalt); 
+
 	if (!gui) {
 		Fl::lock();
 		static_cast<geSampleChannel*>(ch->guiChannel)->readActions->value(1);
@@ -390,29 +388,12 @@ void startReadingRecs(SampleChannel* ch, bool gui)
 /* -------------------------------------------------------------------------- */
 
 
-void stopReadingRecs(SampleChannel* ch, bool gui)
+void stopReadingActions(Channel* ch, bool gui)
 {
 	using namespace giada::m;
 
-	/* First of all, if the clock is not running just stop and disable everything.
-	Then if "treatRecsAsLoop" wait until the sequencer reaches beat 0, so put the
-	channel in REC_ENDING status. */
-
-	if (!clock::isRunning()) {
-		ch->recStatus = REC_STOPPED;
-		ch->setReadActions(false, false);
-	}
-	else
-	if (ch->recStatus == REC_WAITING)
-		ch->recStatus = REC_STOPPED;
-	else
-	if (ch->recStatus == REC_ENDING)
-		ch->recStatus = REC_READING;
-	else
-	if (conf::treatRecsAsLoops)
-		ch->recStatus = REC_ENDING;
-	else
-		ch->setReadActions(false, conf::recsStopOnChanHalt);
+	ch->stopReadingActions(clock::isRunning(), conf::treatRecsAsLoops, 
+		conf::recsStopOnChanHalt);
 
 	if (!gui) {
 		Fl::lock();

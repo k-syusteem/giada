@@ -226,6 +226,26 @@ void SampleChannel::manualKill()
 /* -------------------------------------------------------------------------- */
 
 
+void SampleChannel::startReadingActions(bool treatRecsAsLoops, bool recsStopOnChanHalt)
+{
+	audioProc::startReadingActions(this, treatRecsAsLoops, recsStopOnChanHalt);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
+void SampleChannel::stopReadingActions(bool isClockRunning, bool treatRecsAsLoops, 
+		bool recsStopOnChanHalt)
+{
+	audioProc::stopReadingActions(this, isClockRunning, treatRecsAsLoops, 
+		recsStopOnChanHalt);
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 void SampleChannel::setMute(bool isUserGenerated)
 {
 	audioProc::setMute(this, isUserGenerated);

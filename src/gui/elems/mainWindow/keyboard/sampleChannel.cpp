@@ -363,7 +363,7 @@ void geSampleChannel::cb_openMenu()
 void geSampleChannel::cb_readActions()
 {
 	using namespace giada::c::channel;
-	toggleReadingRecs(static_cast<SampleChannel*>(ch));
+	toggleReadingActions(static_cast<SampleChannel*>(ch));
 }
 
 
