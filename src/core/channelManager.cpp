@@ -136,11 +136,11 @@ int create(int type, int bufferSize, bool inputMonitorOn, Channel** out)
 {
 	Channel* ch;
 	if (type == G_CHANNEL_SAMPLE)
-		ch = new SampleChannel(bufferSize, inputMonitorOn);
+		ch = new SampleChannel(inputMonitorOn);
 	else
-		ch = new MidiChannel(bufferSize);
+		ch = new MidiChannel();
 
-	if (!ch->allocBuffers()) {
+	if (!ch->allocBuffers(bufferSize)) {
 		delete ch;
 		return G_RES_ERR_MEMORY;
 	}

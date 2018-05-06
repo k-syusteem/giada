@@ -50,9 +50,8 @@ using std::string;
 using namespace giada::m;
 
 
-Channel::Channel(int type, int status, int bufferSize)
-: bufferSize     (bufferSize),
-	guiChannel     (nullptr),
+Channel::Channel(int type, int status)
+:	guiChannel     (nullptr),
 	previewMode    (G_PREVIEW_NONE),
 	pan            (0.5f),
 	volume         (G_DEFAULT_VOL),
@@ -97,7 +96,7 @@ Channel::~Channel()
 /* -------------------------------------------------------------------------- */
 
 
-bool Channel::allocBuffers()
+bool Channel::allocBuffers(int bufferSize)
 {
 	if (!buffer.alloc(bufferSize, G_MAX_IO_CHANS)) {
 		gu_log("[Channel::allocBuffers] unable to alloc memory for internal buffer!\n");

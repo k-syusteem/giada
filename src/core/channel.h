@@ -52,7 +52,7 @@ class Channel
 {
 protected:
 
-	Channel(int type, int status, int bufferSize);
+	Channel(int type, int status);
 
 	/* sendMidiLMessage
 	Composes a MIDI message by merging bytes from MidiMap conf class, and sends it 
@@ -172,7 +172,7 @@ public:
 	Mandatory method to allocate memory for internal buffers. Call it after the
 	object has been constructed. */
 
-	virtual bool allocBuffers();
+	virtual bool allocBuffers(int bufferSize);
 
 	/* calcPanning
 	Given an audio channel (stereo: 0 or 1) computes the current panning value. */
@@ -211,12 +211,6 @@ public:
 	void clearMidiBuffer();
 
 #endif
-
-	/* bufferSize
-	Size of every working buffer in this channel. */
-	/* TODO USELESS, use buffer.getSize() */
-
-	int bufferSize;
 
   geChannel* guiChannel;        // pointer to a gChannel object, part of the GUI
 

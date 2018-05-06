@@ -56,7 +56,7 @@ private:
 
 public:
 
-	SampleChannel(int bufferSize, bool inputMonitor);
+	SampleChannel(bool inputMonitor);
 	~SampleChannel();
 
 	void copy(const Channel* src, pthread_mutex_t* pluginMutex) override;
@@ -80,7 +80,7 @@ public:
 	void writePatch(int i, bool isProject) override;
 	bool canInputRec() override;
 	void stopInputRec(int globalFrame, int quantize, bool mixerIsRunning) override;
-	bool allocBuffers() override;
+	bool allocBuffers(int bufferSize) override;
 
 	float getBoost() const;	
 	int   getBegin() const;

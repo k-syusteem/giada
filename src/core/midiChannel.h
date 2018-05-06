@@ -43,7 +43,7 @@ class MidiChannel : public Channel
 {
 public:
 
-	MidiChannel(int bufferSize);
+	MidiChannel();
 	~MidiChannel();
 
 	void copy(const Channel* src, pthread_mutex_t* pluginMutex) override;
