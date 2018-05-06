@@ -40,7 +40,7 @@ void rewind(SampleChannel* ch, int localFrame)
 		|abcdefabcdefab*abcdefabcde|
 		[old data-----]*[new data--] */
 
-	if (localFrame > 0 && ch->status & (STATUS_PLAY | STATUS_ENDING))
+	if (localFrame > 0 && ch->isPlaying())
 		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, localFrame);
 }
 
@@ -237,7 +237,7 @@ void parseAction(SampleChannel* ch, const recorder::action* a, int localFrame,
 
 void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 {
-	if (ch->wave == nullptr || ch->status & ~(STATUS_PLAY | STATUS_ENDING))
+	if (ch->wave == nullptr || !ch->status->isPlaying())
 		return;
 
 	if (localFrame != ch->frameRewind) {
@@ -260,6 +260,9 @@ void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 	}
 	else { // at this point the sample has reached the end */
 
+		/* Check for end of samples. SINGLE_ENDLESS runs forever unless it's in 
+		ENDING mode. */
+	
 		if (ch->mode & (SINGLE_BASIC | SINGLE_PRESS | SINGLE_RETRIG) ||
 			 (ch->mode == SINGLE_ENDLESS && ch->status == STATUS_ENDING)   ||
 			 (ch->mode & LOOP_ANY && !isClockRunning))     // stop loops when the seq is off
@@ -279,9 +282,6 @@ void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 			if (ch->status != STATUS_OFF)
 				ch->status = STATUS_WAIT;
 		}
-
-		/* Check for end of samples. SINGLE_ENDLESS runs forever unless it's in 
-		ENDING mode. */
 
 		rewind(ch, localFrame);
 	}
@@ -598,12 +598,9 @@ void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart,
 
 void fillBuffer(SampleChannel* ch)
 {
-	/** TODO - these clear() may be done only if status PLAY | ENDING (if below),
-	 * but it would require extra clearPChan calls when samples stop */
-
 	ch->buffer.clear();
 
-	if (ch->status & (STATUS_PLAY | STATUS_ENDING))
+	if (ch->isPlaying())
 		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, 0);
 }
 

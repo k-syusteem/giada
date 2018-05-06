@@ -30,10 +30,9 @@ void onFirstBeat(MidiChannel* ch)
 
 void parseAction(MidiChannel* ch, const recorder::action* a, int localFrame)
 {
-	if (ch->status & (STATUS_PLAY | STATUS_ENDING) && !ch->mute) {
+	if (ch->isPlaying() && !ch->mute) {
 		if (ch->midiOut)
 			kernelMidi::send(a->iValue | MIDI_CHANS[ch->midiOutChan]);
-
 #ifdef WITH_VST
 		ch->addVstMidiEvent(a->iValue, localFrame);
 #endif
@@ -102,7 +101,7 @@ void start(MidiChannel* ch)
 
 void kill(MidiChannel* ch, int localFrame)
 {
-	if (ch->status & (STATUS_PLAY | STATUS_ENDING)) {
+	if (ch->isPlaying()) {
 		if (ch->midiOut)
 			kernelMidi::send(MIDI_ALL_NOTES_OFF);
 #ifdef WITH_VST
