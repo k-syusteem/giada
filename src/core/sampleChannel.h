@@ -42,12 +42,6 @@ class SampleChannel : public Channel
 {
 private:
 
-	/* calcFadeoutStep
-	How many frames are left before the end of the sample? Is there enough room 
-	for a complete fadeout? Should we shorten it? */
-
-	void calcFadeoutStep();
-
 	/* rsmp_state, rsmp_data
 	Structs from libsamplerate. */
 
@@ -114,14 +108,6 @@ public:
 	void setEnd(int f);
 	void setBoost(float v);
 
-	/* fade methods
-	Prepare channel for fade, mixer will take care of the process during master 
-	play. */
-
-	void setFadeIn(bool internal);
-	void setFadeOut(int actionPostFadeout);
-	void setXFade(int frame);
-
 	void setReadActions(bool v, bool recsStopOnChanHalt);
 
 	/* onPreviewEnd
@@ -141,23 +127,12 @@ public:
 	
 	Wave* wave;
 	int   tracker;         // chan position
-	int   fadeoutTracker;  // tracker fadeout, xfade only
 	int   trackerPreview;  // chan position for audio preview
 	int   shift;
 	int   mode;            // mode: see const.h
 	bool  qWait;           // quantizer wait
-  bool  inputMonitor;
-
-	bool  fadeinOn;
-	float fadeinVol;
-	bool  fadeoutOn;
-	float fadeoutVol;      // fadeout volume
-  int   fadeoutType;     // xfade or fadeout
-	float fadeoutStep;     // fadeout decrease
-  int		fadeoutEnd;      // what to do when fadeout ends
-  
+  bool  inputMonitor;  
 	float boost;
-	
 	float pitch;
 
 	/* begin, end
@@ -176,21 +151,6 @@ public:
   bool     midiInVeloAsVol;
   uint32_t midiInReadActions;
   uint32_t midiInPitch;
-
-	/* const - what to do when a fadeout ends */
-
-	enum {
-		DO_STOP   = 0x01,
-		DO_MUTE   = 0x02,
-		DO_MUTE_I = 0x04
-	};
-
-	/*  const - fade types */
-
-	enum {
-		FADEOUT = 0x01,
-		XFADE   = 0x02
-	};
 };
 
 #endif

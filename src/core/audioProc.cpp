@@ -52,6 +52,8 @@ Stops the channel immediately, no further checks. */
 
 void hardStop(SampleChannel* ch, int localFrame)
 {
+	if (ch->status == STATUS_OFF)
+		return;
 	if (localFrame != 0)        
 		ch->buffer.clear(localFrame); // clear data in range [localFrame, [end]]
 	ch->status = STATUS_OFF;
@@ -239,72 +241,17 @@ void sum(SampleChannel* ch, int localFrame, bool isClockRunning)
 		return;
 
 	if (localFrame != ch->frameRewind) {
-
-		/* volume envelope, only if seq is running */
-
-		if (isClockRunning) {
+		if (isClockRunning) {         // volume envelope, only if seq is running
 			ch->volume_i += ch->volume_d;
 			if (ch->volume_i < 0.0f)
 				ch->volume_i = 0.0f;
 			else
 			if (ch->volume_i > 1.0f)
 				ch->volume_i = 1.0f;
-		}
-
-		/* fadein or fadeout processes. If mute, delete any signal. */
-
-		/** TODO - big issue: fade[in/out]Vol * internal_volume might be a
-		 * bad choice: it causes glitches when muting on and off during a
-		 * volume envelope. */
-
-		if (ch->mute || ch->mute_i) {
+		}                        
+		if (ch->mute || ch->mute_i) {  // mute operations
 			for (int i=0; i<ch->buffer.countChannels(); i++)
 				ch->buffer[localFrame][i] = 0.0f;
-		}
-		else
-		if (ch->fadeinOn) {
-			if (ch->fadeinVol < 1.0f) {
-				for (int i=0; i<ch->buffer.countChannels(); i++)
-					ch->buffer[localFrame][i] *= ch->fadeinVol * ch->volume_i;
-				ch->fadeinVol += 0.01f;
-			}
-			else {
-				ch->fadeinOn  = false;
-				ch->fadeinVol = 0.0f;
-			}
-		}
-		else
-		if (ch->fadeoutOn) {
-			if (ch->fadeoutVol > 0.0f) { // fadeout ongoing
-				if (ch->fadeoutType == SampleChannel::XFADE) {
-					for (int i=0; i<ch->buffer.countChannels(); i++)
-						ch->buffer[localFrame][i] = ch->pChan[localFrame][i] * ch->fadeoutVol * ch->volume_i;
-				}
-				else {
-					for (int i=0; i<ch->buffer.countChannels(); i++)
-						ch->buffer[localFrame][i] *= ch->fadeoutVol * ch->volume_i;
-				}
-				ch->fadeoutVol -= ch->fadeoutStep;
-			}
-			else {  // fadeout end
-				ch->fadeoutOn  = false;
-				ch->fadeoutVol = 1.0f;
-
-				/* QWait ends with the end of the xfade */
-
-				if (ch->fadeoutType == SampleChannel::XFADE) {
-					ch->qWait = false;
-				}
-				else {
-					if (ch->fadeoutEnd == SampleChannel::DO_MUTE)
-						ch->mute = true;
-					else
-					if (ch->fadeoutEnd == SampleChannel::DO_MUTE_I)
-						ch->mute_i = true;
-					else             // DO_STOP
-						hardStop(ch, localFrame);
-				}
-			}
 		}
 		else {
 			for (int i=0; i<ch->buffer.countChannels(); i++)
@@ -366,15 +313,10 @@ void empty(SampleChannel* ch)
 
 /* -------------------------------------------------------------------------- */
 
-
+/* TODO useless */
 void kill(SampleChannel* ch, int localFrame)
 {
-	if (ch->wave != nullptr && ch->status != STATUS_OFF) {
-		if (ch->mute || ch->mute_i || (ch->status == STATUS_WAIT && ch->mode & LOOP_ANY))
-			hardStop(ch, localFrame);
-		else
-			ch->setFadeOut(SampleChannel::DO_STOP);
-	}
+	hardStop(ch, localFrame);
 }
 
 
@@ -460,12 +402,8 @@ void stopReadingActions(SampleChannel* ch, bool isClockRunning, bool treatRecsAs
 
 void stop(SampleChannel* ch, bool isUserGenerated)
 {
-	if (ch->mode == SINGLE_PRESS && ch->status == STATUS_PLAY) {
-		if (ch->mute || ch->mute_i)
-			hardStop(ch, 0);  /// FIXME - wrong frame value
-		else
-			ch->setFadeOut(SampleChannel::DO_STOP);
-	}
+	if (ch->mode == SINGLE_PRESS && ch->status == STATUS_PLAY)
+		hardStop(ch, 0);  /// FIXME - wrong frame value
 	else  // stop a SINGLE_PRESS immediately, if the quantizer is on
 	if (ch->mode == SINGLE_PRESS && ch->qWait == true)
 		ch->qWait = false;
@@ -530,38 +468,7 @@ void rewind(SampleChannel* ch)
 
 void setMute(SampleChannel* ch, bool isUserGenerated)
 {
-	if (!isUserGenerated) {
-
-		/* global mute is on? don't waste time with fadeout, just mute it
-		 * internally */
-
-		if (ch->mute)
-			ch->mute_i = true;
-		else {
-			if (ch->isPlaying())
-				ch->setFadeOut(SampleChannel::DO_MUTE_I);
-			else
-				ch->mute_i = true;
-		}
-	}
-	else {
-
-		/* internal mute is on? don't waste time with fadeout, just mute it
-		 * globally */
-
-		if (ch->mute_i)
-			ch->mute = true;
-		else {
-
-			/* sample in play? fadeout needed. Else, just mute it globally */
-
-			if (ch->isPlaying())
-				ch->setFadeOut(SampleChannel::DO_MUTE);
-			else
-				ch->mute = true;
-		}
-	}
-
+	isUserGenerated ? ch->mute = true : ch->mute_i = true;
 	ch->sendMidiLmute(); /* MIDI TODO ********** */
 }
 
@@ -571,27 +478,7 @@ void setMute(SampleChannel* ch, bool isUserGenerated)
 
 void unsetMute(SampleChannel* ch, bool isUserGenerated)
 {
-	if (!isUserGenerated) {
-		if (ch->mute)
-			ch->mute_i = false;
-		else {
-			if (ch->isPlaying())
-				ch->setFadeIn(isUserGenerated);
-			else
-				ch->mute_i = false;
-		}
-	}
-	else {
-		if (ch->mute_i)
-			ch->mute = false;
-		else {
-			if (ch->isPlaying())
-				ch->setFadeIn(isUserGenerated);
-			else
-				ch->mute = false;
-		}
-	}
-
+	isUserGenerated ? ch->mute = false : ch->mute_i = false;
 	ch->sendMidiLmute(); /* MIDI TODO ********** */
 }
 
@@ -677,9 +564,6 @@ void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart,
 		}
 		case STATUS_PLAY:
 		{
-			if (ch->mode == SINGLE_BASIC)
-				ch->setFadeOut(SampleChannel::DO_STOP);
-			else
 			if (ch->mode == SINGLE_RETRIG) {
 				if (clock::getQuantize() > 0 && clock::isRunning() && doQuantize)
 					ch->qWait = true;
@@ -720,11 +604,8 @@ void fillBuffer(SampleChannel* ch)
 	ch->buffer.clear();
 	ch->pChan.clear();
 
-	if (ch->status & (STATUS_PLAY | STATUS_ENDING)) {
+	if (ch->status & (STATUS_PLAY | STATUS_ENDING))
 		ch->tracker = fillBuffer(ch, ch->buffer, ch->tracker, 0);
-		if (ch->fadeoutOn && ch->fadeoutType == SampleChannel::XFADE)
-			ch->fadeoutTracker = fillBuffer(ch, ch->pChan, ch->fadeoutTracker, 0);
-	}	
 }
 
 

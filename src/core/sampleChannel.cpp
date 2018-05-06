@@ -57,17 +57,11 @@ SampleChannel::SampleChannel(bool inputMonitor)
 		rsmp_state       (nullptr),
 		wave             (nullptr),
 		tracker          (0),
-		fadeoutTracker   (0),
 		trackerPreview   (0),
 		shift            (0),
 		mode             (G_DEFAULT_CHANMODE),
 		qWait	           (false),
 		inputMonitor     (inputMonitor),
-		fadeinOn         (false),
-		fadeinVol        (1.0f),
-		fadeoutOn        (false),
-		fadeoutVol       (1.0f),
-		fadeoutStep      (G_DEFAULT_FADEOUT_STEP),
 		boost            (G_DEFAULT_BOOST),
 		pitch            (G_DEFAULT_PITCH),
 		begin            (0),
@@ -132,14 +126,6 @@ void SampleChannel::copy(const Channel* src_, pthread_mutex_t* pluginMutex)
 	boost           = src->boost;
 	mode            = src->mode;
 	qWait           = src->qWait;
-	fadeinOn        = src->fadeinOn;
-	fadeinVol       = src->fadeinVol;
-	fadeoutOn       = src->fadeoutOn;
-	fadeoutVol      = src->fadeoutVol;
-	fadeoutTracker  = src->fadeoutTracker;
-	fadeoutStep     = src->fadeoutStep;
-	fadeoutType     = src->fadeoutType;
-	fadeoutEnd      = src->fadeoutEnd;
 	setPitch(src->pitch);
 
 	if (src->wave)
@@ -411,59 +397,6 @@ void SampleChannel::setBoost(float v)
 float SampleChannel::getBoost() const
 {
 	return boost;
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::calcFadeoutStep()
-{
-	if (end - tracker < (1 / G_DEFAULT_FADEOUT_STEP))
-		fadeoutStep = ceil((end - tracker) / volume); /// or volume_i ???
-	else
-		fadeoutStep = G_DEFAULT_FADEOUT_STEP;
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::setFadeIn(bool internal)
-{
-	if (internal) mute_i = false;  // remove mute before fading in
-	else          mute   = false;
-	fadeinOn  = true;
-	fadeinVol = 0.0f;
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::setFadeOut(int actionPostFadeout)
-{
-	calcFadeoutStep();
-	fadeoutOn   = true;
-	fadeoutVol  = 1.0f;
-	fadeoutType = FADEOUT;
-	fadeoutEnd	= actionPostFadeout;
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-
-void SampleChannel::setXFade(int frame)
-{
-	gu_log("[xFade] frame=%d tracker=%d\n", frame, tracker);
-
-	calcFadeoutStep();
-	fadeoutOn      = true;
-	fadeoutVol     = 1.0f;
-	fadeoutType    = XFADE;
-	fadeoutTracker = fillChan(pChan, tracker, 0, false);
-	reset(frame);
 }
 
 
