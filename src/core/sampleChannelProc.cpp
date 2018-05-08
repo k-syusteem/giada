@@ -38,43 +38,52 @@ void rewind_(SampleChannel* ch, int localFrame)
 /* -------------------------------------------------------------------------- */
 
 
+void recordKeyPressAction_(SampleChannel* ch, int globalFrame, int bufferSize)
+{
+	/* SINGLE_PRESS mode needs overdub. Also, disable reading actions while 
+	overdubbing. */
+	if (ch->mode == SINGLE_PRESS) {
+		recorder::startOverdub(ch->index, G_ACTION_KEYS, globalFrame, bufferSize);
+		ch->readActions = false;
+	}
+	else
+		recorder::rec(ch->index, G_ACTION_KEYPRESS, globalFrame);
+	ch->hasActions = true;
+}
+
+
+/* -------------------------------------------------------------------------- */
+
+
 /* quantize
 Starts channel according to quantizer. Index = array index of mixer::channels 
 used by recorder, localFrame = frame within the current buffer, 
 globalFrame = frame within the whole sequencer loop.  */
 
-void quantize_(SampleChannel* ch, int index, int localFrame, int globalFrame)
+void quantize_(SampleChannel* ch, int index/* TODO useless*/, int localFrame, int globalFrame)
 {
 	/* skip if LOOP_ANY or not in quantizer-wait mode */
 
 	if ((ch->mode & LOOP_ANY) || !ch->qWait)
 		return;
 
-	/* no fadeout if the sample starts for the first time (from a
-	 * STATUS_OFF), it would be meaningless. */
+	switch (ch->status) {
 
-	if (ch->status == STATUS_OFF) {
-		ch->status  = STATUS_PLAY;
-		ch->sendMidiLplay(); /* MIDI TODO ********** */
-		ch->qWait   = false;
-		ch->tracker = ch->fillBuffer(ch->buffer, ch->tracker, localFrame, true);  /// FIXME: ???
+		case STATUS_OFF:
+			ch->status  = STATUS_PLAY;
+			ch->qWait   = false;
+			ch->tracker = ch->fillBuffer(ch->buffer, ch->tracker, localFrame, true);
+			ch->sendMidiLplay(); /* MIDI TODO ********** */
+			break;
+
+		default:
+			rewind_(ch, localFrame);
+			break;
 	}
-	else
-		rewind_(ch, localFrame);
 
-	/* Now we record the keypress, if the quantizer is on. SINGLE_PRESS needs 
-	overdub. */
-
-	if (recorder::canRec(ch, clock::isRunning(), mixer::recording)) {
-		if (ch->mode == SINGLE_PRESS) {
-			recorder::startOverdub(index, G_ACTION_KEYS, globalFrame, 
-				kernelAudio::getRealBufSize());
-			ch->readActions = false;   // don't read actions while overdubbing
-		}
-		else
-			recorder::rec(index, G_ACTION_KEYPRESS, globalFrame);
-		ch->hasActions = true;
-	}	
+	/* Now we record the keypress, if the quantizer is on. */
+	if (recorder::canRec(ch, clock::isRunning(), mixer::recording)) 
+		recordKeyPressAction_(ch, globalFrame, kernelAudio::getRealBufSize());
 }
 
 
@@ -492,26 +501,18 @@ void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart,
 				m::recorder::canRec(ch, m::clock::isRunning(), m::mixer::recording) &&
 				!(ch->mode & LOOP_ANY))
 		{
-			if (ch->mode == SINGLE_PRESS) {
-				m::recorder::startOverdub(ch->index, G_ACTION_KEYS, m::clock::getCurrentFrame(),
-					m::kernelAudio::getRealBufSize());
-				ch->readActions = false;   // don't read actions while overdubbing
-			}
-			else {
-				m::recorder::rec(ch->index, G_ACTION_KEYPRESS, m::clock::getCurrentFrame());
-				ch->hasActions = true;
+			recordKeyPressAction_(ch, m::clock::getCurrentFrame(), kernelAudio::getRealBufSize());
 
-				/* Why return here? You record an action and then you call ch->start: 
-				Mixer, which is on another thread, reads your newly recorded action if you 
-				have readActions == true, and then ch->start kicks in right after it.
-				The result: Mixer plays the channel (due to the new action) but the code
-				in the switch below  kills it right away (because the sample is playing). 
-				Fix: start channel only if you are not recording anything, i.e. let 
-				Mixer play it. */
+			/* Why return here? You record an action and then you call ch->start: 
+			Mixer, which is on another thread, reads your newly recorded action if you 
+			have readActions == true, and then ch->start kicks in right after it.
+			The result: Mixer plays the channel (due to the new action) but the code
+			in the switch below  kills it right away (because the sample is playing). 
+			Fix: start channel only if you are not recording anything, i.e. let 
+			Mixer play it. */
 
-				if (ch->readActions)
-					return;
-			}
+			if (ch->readActions)
+				return;
 		}
 	}
 
@@ -547,7 +548,7 @@ void start(SampleChannel* ch, int localFrame, bool doQuantize, bool forceStart,
 					ch->sendMidiLplay();   /* MIDI TODO ********** */
 
 					/* Do fillBuffer only if this is not a user-generated event (i.e. is an
-					action read by Mixer). Otherwise clear() will take take of calling
+					action read by Mixer). Conversely, clear() will take take of calling
 					fillBuffer on the next cycle. */
 
 					if (!isUserGenerated)
